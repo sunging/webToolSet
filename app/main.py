@@ -1,7 +1,11 @@
-from fastapi import FastAPI, Request, Response, status
+from typing import Annotated
+
+from fastapi import FastAPI, Request, Response, status, Query, Path
 import icmplib
 import uvicorn
 import logging
+
+from wakeonlan import send_magic_packet
 from app.utils import get_real_ip
 
 app = FastAPI()
@@ -58,6 +62,16 @@ def get_my_ip(request: Request):
         str: The IP address of the client.
     """
     return get_real_ip(request)
+
+
+@app.get('/wol/{mac_addr}')
+def wake_on_lan(
+        mac_addr: Annotated[str,
+        Path(title="device mac address to wakeup", pattern=r"^\s*([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}\s*$")],
+):
+    send_magic_packet(mac_addr)
+    return {'rst': 'success'}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=8000)
