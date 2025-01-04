@@ -45,7 +45,7 @@ def ping(request: Request, response: Response, address: str | None = None):
         return {"error": str(e)}
 
     if not host.is_alive:
-        response.status_code = status.HTTP_408_REQUEST_TIMEOUT
+        response.status_code = status.HTTP_400_BAD_REQUEST
         return {"error": "Host is not alive"}
 
     delay = host.avg_rtt
