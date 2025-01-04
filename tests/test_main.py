@@ -5,15 +5,18 @@ from fastapi.testclient import TestClient
 
 import os
 import sys
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app.main import app
 import icmplib
 
 client = TestClient(app)
 
+
 def test_root():
     response = client.get("/")
     assert response.status_code == 200
+
 
 def test_ping():
     try:
@@ -29,6 +32,7 @@ def test_ping():
     response = client.get("/ping/::1")
     assert response.status_code == 200
     assert 'delay' in response.json()
+
 
 def test_myip():
     response = client.get("/myip")

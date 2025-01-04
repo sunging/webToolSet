@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 def read_root():
     return {}
 
+
 @app.get("/ping")
 @app.get("/ping/{address}")
 def ping(request: Request, response: Response, address: str | None = None):
@@ -33,7 +34,7 @@ def ping(request: Request, response: Response, address: str | None = None):
     """
     if not address:
         address = get_real_ip(request)
-    
+
     try:
         host = icmplib.ping(address)
     except icmplib.NameLookupError as e:
@@ -42,7 +43,7 @@ def ping(request: Request, response: Response, address: str | None = None):
     except Exception as e:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return {"error": str(e)}
-    
+
     if not host.is_alive:
         response.status_code = status.HTTP_408_REQUEST_TIMEOUT
         return {"error": "Host is not alive"}

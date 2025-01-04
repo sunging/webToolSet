@@ -1,5 +1,6 @@
 from fastapi import Request
 
+
 def get_real_ip(request: Request):
     """
     Get the real IP address from the request.
