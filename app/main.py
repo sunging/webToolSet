@@ -10,7 +10,6 @@ from app.utils import get_real_ip
 
 app = FastAPI()
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -75,4 +74,4 @@ def wake_on_lan(
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="localhost", port=8000)
+    uvicorn.run(app, host="localhost", port=8000, log_config='app/logging.yml')
