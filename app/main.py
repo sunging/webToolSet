@@ -6,7 +6,7 @@ import uvicorn
 import logging
 
 from wakeonlan import send_magic_packet
-from app.utils import get_real_ip
+from app.utils import get_real_ip, tcping
 
 app = FastAPI()
 
@@ -49,6 +49,40 @@ def ping(request: Request, response: Response, address: str | None = None):
 
     delay = host.avg_rtt
     return {"delay": delay}
+
+
+@app.get("/tcping")
+@app.get("/tcping/{address}")
+def run_tcping(request: Request, response: Response, address: str = "", port: int = 80, timeout: int = 1):
+    """TCP ping a host and return the delay
+
+    Args:
+        request (Request): request object
+        response (Response): response object
+        address (str | None, optional): target address, if None, use the client's ip. Defaults to None.
+        port (int, optional): port to connect to. Defaults to 80.
+        timeout (int, optional): timeout for each connection attempt in seconds. Defaults to 1.
+
+    Returns:
+        _type_: _description_
+    """
+    if not address:
+        address = get_real_ip(request)
+
+    try:
+        delays = tcping(address, port=port, timeout=timeout)
+    except Exception as e:
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return {"error": str(e)}
+
+    delays = [delay for delay in delays if delay > 0]
+    if not delays:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"error": "tcping failed"}
+
+    delay = sum(delays) / len(delays)
+    return {"delay": delay}
+
 
 @app.get('/myip')
 def get_my_ip(request: Request):
