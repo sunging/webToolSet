@@ -8,7 +8,7 @@ To get started with this FastAPI application, follow these steps:
 
 1. Clone the repository: `git clone https://github.com/sunging/webToolSet.git`
 2. Install the dependencies: `pip install -r requirements.txt`
-3. Run the application: `uvicorn app.main:app`
+3. Run the application: `python app/main.py`
 4. Open your web browser and navigate to `http://localhost:8000` to access the API.
 
 ## Contributing
