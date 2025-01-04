@@ -9,6 +9,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app.main import app
 import icmplib
+from app.utils import tcping
 
 client = TestClient(app)
 
@@ -38,3 +39,8 @@ def test_myip():
     response = client.get("/myip")
     assert response.status_code == 200
     assert response.text
+
+
+def test_tcping():
+    delays = tcping('1.1.1.1')
+    assert [delay for delay in delays if delay > 0]
