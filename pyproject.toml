@@ -1,0 +1,62 @@
+[project]
+name = "webtoolset"
+version = "1.0.0"
+description = "A collection of network diagnostic tools with a modern web interface"
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.11"
+authors = [{ name = "sunging" }]
+keywords = ["fastapi", "network", "ping", "tcping", "wake-on-lan", "tools"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet",
+    "Topic :: System :: Networking",
+]
+
+dependencies = [
+    "fastapi[standard]==0.115.6",
+    "icmplib==3.0.4",
+    "wakeonlan==3.1.0",
+    "PyYAML==6.0.2",
+    "jinja2==3.1.4",
+    "slowapi==0.1.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "flake8>=6.0.0",
+    "httpx>=0.24.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/sunging/webToolSet"
+Repository = "https://github.com/sunging/webToolSet"
+Documentation = "https://github.com/sunging/webToolSet#readme"
+
+[project.scripts]
+webtoolset = "app.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "flake8>=6.0.0",
+    "httpx>=0.24.0",
+]

@@ -1,7 +1,9 @@
+"""IP address utilities for network tools."""
+
 from fastapi import Request
 
 
-def get_real_ip(request: Request):
+def get_real_ip(request: Request) -> str | None:
     """
     Get the real IP address from the request.
 
@@ -10,11 +12,17 @@ def get_real_ip(request: Request):
     If none of the headers are present, the IP address of the client host is returned.
 
     Args:
-        request (Request): The request object.
+        request: The FastAPI request object.
 
     Returns:
-        str: The real IP address.
+        The real IP address as a string, or None if not available.
 
     """
     headers = request.headers
-    return headers.get("X-Real-IP") or headers.get("X-Forwarded-For") or request.client.host
+    return (
+        headers.get("X-Real-IP")
+        or headers.get("X-Forwarded-For")
+        or request.client.host
+        if request.client
+        else None
+    )
