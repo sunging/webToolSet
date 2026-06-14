@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Tool Set - 网络工具集</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>
+                <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                Web Tool Set
+            </h1>
+            <p class="subtitle">网络诊断工具集</p>
+            <button id="theme-toggle" class="theme-toggle" aria-label="切换主题">
+                <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+                <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 快捷信息卡片 -->
+        <section class="info-cards">
+            <div class="card info-card">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <h3>我的 IP</h3>
+                    <p id="my-ip" class="info-value">检测中...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 工具标签页 -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="ping">ICMP Ping</button>
+            <button class="tab-btn" data-tab="tcping">TCP Ping</button>
+            <button class="tab-btn" data-tab="wol">Wake On LAN</button>
+        </div>
+
+        <!-- ICMP Ping -->
+        <section id="ping-tab" class="tab-content active">
+            <div class="card">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    ICMP Ping
+                </h2>
+                <p class="description">测试主机的可达性和网络延迟</p>
+                
+                <form id="ping-form" class="tool-form">
+                    <div class="form-group">
+                        <label for="ping-address">目标地址</label>
+                        <input type="text" id="ping-address" name="address" 
+                               placeholder="输入 IP 地址或域名（留空则 ping 本机 IP）">
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span class="btn-text">开始 Ping</span>
+                        <span class="btn-loading hidden">
+                            <svg class="spinner" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
+                            </svg>
+                            处理中...
+                        </span>
+                    </button>
+                </form>
+
+                <div id="ping-result" class="result-container hidden">
+                    <h4>结果</h4>
+                    <div class="result-content"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TCP Ping -->
+        <section id="tcping-tab" class="tab-content">
+            <div class="card">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                    TCP Ping
+                </h2>
+                <p class="description">测试 TCP 端口的连通性和响应时间</p>
+                
+                <form id="tcping-form" class="tool-form">
+                    <div class="form-row">
+                        <div class="form-group flex-grow">
+                            <label for="tcping-address">目标地址</label>
+                            <input type="text" id="tcping-address" name="address" 
+                                   placeholder="输入 IP 地址或域名">
+                        </div>
+                        <div class="form-group form-group-small">
+                            <label for="tcping-port">端口</label>
+                            <input type="number" id="tcping-port" name="port" value="80" 
+                                   min="1" max="65535" placeholder="80">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="tcping-timeout">超时时间（秒）</label>
+                        <input type="number" id="tcping-timeout" name="timeout" value="2" 
+                               min="1" max="30">
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span class="btn-text">开始 TCP Ping</span>
+                        <span class="btn-loading hidden">
+                            <svg class="spinner" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
+                            </svg>
+                            处理中...
+                        </span>
+                    </button>
+                </form>
+
+                <div id="tcping-result" class="result-container hidden">
+                    <h4>结果</h4>
+                    <div class="result-content"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Wake On LAN -->
+        <section id="wol-tab" class="tab-content">
+            <div class="card">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                        <line x1="6" y1="1" x2="6" y2="4"/>
+                        <line x1="10" y1="1" x2="10" y2="4"/>
+                        <line x1="14" y1="1" x2="14" y2="4"/>
+                    </svg>
+                    Wake On LAN
+                </h2>
+                <p class="description">远程唤醒网络设备</p>
+                
+                <form id="wol-form" class="tool-form">
+                    <div class="form-group">
+                        <label for="wol-mac">MAC 地址</label>
+                        <input type="text" id="wol-mac" name="mac" 
+                               placeholder="XX:XX:XX:XX:XX:XX" 
+                               pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$">
+                        <small class="hint">格式：XX:XX:XX:XX:XX:XX 或 XX-XX-XX-XX-XX-XX</small>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span class="btn-text">发送唤醒包</span>
+                        <span class="btn-loading hidden">
+                            <svg class="spinner" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
+                            </svg>
+                            处理中...
+                        </span>
+                    </button>
+                </form>
+
+                <div id="wol-result" class="result-container hidden">
+                    <h4>结果</h4>
+                    <div class="result-content"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Web Tool Set v1.0.0 | Powered by FastAPI</p>
+            <p>
+                <a href="/docs" target="_blank">API 文档</a>
+                <span class="separator">|</span>
+                <a href="/api/health">健康检查</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

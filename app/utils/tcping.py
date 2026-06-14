@@ -1,3 +1,5 @@
+"""TCP Ping implementation."""
+
 import socket
 import time
 import logging
@@ -5,23 +7,28 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def tcping(ip_address: str, port: int = 80, timeout: int = 1, count: int = 4) -> list[float]:
+def tcping(
+    ip_address: str, port: int = 80, timeout: int = 1, count: int = 4
+) -> list[float]:
     """
     Perform a TCP ping to a specified IP address and port.
 
     Args:
-        ip_address (str): The IP address to ping.
-        port (int, optional): The port to connect to. Defaults to 80.
-        timeout (int, optional): The timeout for each connection attempt in seconds. Defaults to 1.
-        count (int, optional): The number of ping attempts. Defaults to 4.
+        ip_address: The IP address to ping.
+        port: The port to connect to. Defaults to 80.
+        timeout: The timeout for each connection attempt in seconds. Defaults to 1.
+        count: The number of ping attempts. Defaults to 4.
 
     Returns:
-        list[float]: A list of connection times for each ping attempt. A value of 0.0 indicates a timeout.
+        A list of connection times for each ping attempt. A value of 0.0 indicates a timeout.
+
     """
     conn_times = []
 
     for n in range(count):
-        s = socket.socket(socket.AF_INET6 if ":" in ip_address else socket.AF_INET, socket.SOCK_STREAM)
+        s = socket.socket(
+            socket.AF_INET6 if ":" in ip_address else socket.AF_INET, socket.SOCK_STREAM
+        )
         s.settimeout(timeout)
         try:
             start = time.time()
