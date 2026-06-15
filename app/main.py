@@ -88,7 +88,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     """Serve the main frontend page."""
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html")
 
 
 # Legacy API endpoints (for backward compatibility)
