@@ -110,6 +110,75 @@ class TestTcpPingEndpoint:
         assert response.status_code == 422  # Validation error
 
 
+class TestNslookupEndpoint:
+    """Tests for the /api/nslookup endpoint."""
+
+    def test_nslookup_resolves_hostname(self):
+        """Test nslookup resolves a well-known hostname."""
+        response = client.get("/api/nslookup/dns.google")
+        # May fail without network access, so accept error structure too.
+        assert response.status_code in [200, 404, 500]
+        data = response.json()
+        assert data["name"] == "dns.google"
+        if response.status_code == 200:
+            assert len(data["addresses"]) > 0
+        else:
+            assert data["error"] is not None
+
+    def test_nslookup_invalid_host(self):
+        """Test nslookup with a non-existent host returns an error."""
+        response = client.get(
+            "/api/nslookup/invalid.host.that.does.not.exist.example"
+        )
+        assert response.status_code in [404, 500]
+        data = response.json()
+        assert data["error"] is not None
+
+
+class TestDigEndpoint:
+    """Tests for the /api/dig endpoint."""
+
+    def test_dig_a_record(self):
+        """Test dig for an A record."""
+        response = client.get("/api/dig/dns.google?type=A")
+        assert response.status_code in [200, 404, 500]
+        data = response.json()
+        assert data["name"] == "dns.google"
+        assert data["record_type"] == "A"
+        if response.status_code == 200:
+            assert len(data["records"]) > 0
+
+    def test_dig_default_type(self):
+        """Test dig defaults to A record type."""
+        response = client.get("/api/dig/dns.google")
+        assert response.status_code in [200, 404, 500]
+        data = response.json()
+        assert data["record_type"] == "A"
+
+    def test_dig_invalid_type(self):
+        """Test dig with an unsupported record type returns validation error."""
+        response = client.get("/api/dig/dns.google?type=INVALID")
+        assert response.status_code == 422
+
+
+class TestTracerouteEndpoint:
+    """Tests for the /api/traceroute endpoint."""
+
+    def test_traceroute_structure(self):
+        """Test traceroute returns the expected structure."""
+        response = client.get("/api/traceroute/127.0.0.1?max_hops=1&timeout=1")
+        # Requires raw socket privileges; accept error structure too.
+        assert response.status_code in [200, 404, 500]
+        data = response.json()
+        assert data["address"] == "127.0.0.1"
+        assert "hops" in data or "error" in data
+
+    def test_traceroute_invalid_max_hops(self):
+        """Test traceroute with out-of-range max_hops returns validation error."""
+        response = client.get("/api/traceroute/127.0.0.1?max_hops=999")
+        assert response.status_code == 422
+
+
 class TestWakeOnLanEndpoint:
     """Tests for the /api/wol endpoint."""
 

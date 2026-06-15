@@ -1,9 +1,14 @@
 """Network diagnostic services."""
 
+import ipaddress
 import logging
 import socket
 import time
 
+import dns.exception
+import dns.rdatatype
+import dns.resolver
+import dns.reversename
 import icmplib
 from wakeonlan import send_magic_packet
 
@@ -88,6 +93,161 @@ class TcpPingService:
 
         avg_delay = sum(successful_delays) / len(successful_delays)
         return avg_delay, None
+
+
+class DnsService:
+    """Service for DNS lookup operations (nslookup and dig)."""
+
+    @staticmethod
+    def nslookup(name: str) -> tuple[dict | None, str | None]:
+        """
+        Perform an nslookup-style DNS resolution.
+
+        Resolves a hostname to its A/AAAA addresses, or performs a reverse
+        (PTR) lookup when given an IP address.
+
+        Args:
+            name: The hostname or IP address to look up.
+
+        Returns:
+            A tuple of (result, error_message). result is a dict with keys
+            ``server``, ``addresses`` and ``canonical_name`` when successful.
+
+        """
+        resolver = dns.resolver.Resolver()
+        server = resolver.nameservers[0] if resolver.nameservers else None
+
+        try:
+            ipaddress.ip_address(name)
+            is_ip = True
+        except ValueError:
+            is_ip = False
+
+        addresses: list[str] = []
+        canonical_name: str | None = None
+
+        try:
+            if is_ip:
+                rev_name = dns.reversename.from_address(name)
+                answers = resolver.resolve(rev_name, "PTR")
+                addresses = [str(r).rstrip(".") for r in answers]
+            else:
+                for rtype in ("A", "AAAA"):
+                    try:
+                        answers = resolver.resolve(name, rtype)
+                    except dns.resolver.NoAnswer:
+                        continue
+                    cname = str(answers.canonical_name).rstrip(".")
+                    if cname and cname != name.rstrip("."):
+                        canonical_name = cname
+                    addresses.extend(str(r) for r in answers)
+                if not addresses:
+                    return None, f"No DNS records found for {name}"
+        except dns.resolver.NXDOMAIN:
+            return None, f"Name does not exist: {name}"
+        except dns.resolver.NoNameservers:
+            return None, "No nameservers could answer the query"
+        except dns.exception.Timeout:
+            return None, "DNS query timed out"
+        except Exception as e:
+            logger.debug(f"nslookup error: {e}")
+            return None, f"DNS lookup failed: {e}"
+
+        return {
+            "server": server,
+            "addresses": addresses,
+            "canonical_name": canonical_name,
+        }, None
+
+    @staticmethod
+    def dig(name: str, record_type: str = "A") -> tuple[dict | None, str | None]:
+        """
+        Perform a dig-style DNS query for a specific record type.
+
+        Args:
+            name: The domain name to query.
+            record_type: DNS record type (e.g. A, AAAA, MX, NS, TXT, CNAME).
+
+        Returns:
+            A tuple of (result, error_message). result is a dict with keys
+            ``server``, ``records`` and ``query_time`` when successful.
+
+        """
+        record_type = record_type.upper()
+        resolver = dns.resolver.Resolver()
+        server = resolver.nameservers[0] if resolver.nameservers else None
+
+        try:
+            start = time.time()
+            answers = resolver.resolve(name, record_type)
+            query_time = (time.time() - start) * 1000
+        except dns.resolver.NXDOMAIN:
+            return None, f"Name does not exist: {name}"
+        except dns.resolver.NoAnswer:
+            return None, f"No {record_type} records found for {name}"
+        except dns.resolver.NoNameservers:
+            return None, "No nameservers could answer the query"
+        except dns.exception.Timeout:
+            return None, "DNS query timed out"
+        except dns.rdatatype.UnknownRdatatype:
+            return None, f"Unknown record type: {record_type}"
+        except Exception as e:
+            logger.debug(f"dig error: {e}")
+            return None, f"DNS query failed: {e}"
+
+        ttl = answers.rrset.ttl if answers.rrset is not None else None
+        records = [
+            {"type": record_type, "value": str(rdata), "ttl": ttl}
+            for rdata in answers
+        ]
+
+        return {
+            "server": server,
+            "records": records,
+            "query_time": query_time,
+        }, None
+
+
+class TracerouteService:
+    """Service for traceroute operations."""
+
+    @staticmethod
+    def traceroute(
+        address: str, max_hops: int = 30, timeout: int = 2
+    ) -> tuple[list | None, str | None]:
+        """
+        Perform a traceroute to the specified address.
+
+        Args:
+            address: The target IP address or hostname.
+            max_hops: Maximum number of hops to probe.
+            timeout: Per-hop timeout in seconds.
+
+        Returns:
+            A tuple of (hops, error_message). hops is a list of dicts with
+            keys ``distance``, ``address``, ``avg_rtt`` and ``is_alive``.
+
+        """
+        try:
+            hops = icmplib.traceroute(address, max_hops=max_hops, timeout=timeout)
+        except icmplib.NameLookupError as e:
+            return None, f"Name lookup failed: {e}"
+        except icmplib.SocketPermissionError as e:
+            return None, f"Permission denied (raw socket requires privileges): {e}"
+        except Exception as e:
+            logger.debug(f"traceroute error: {e}")
+            return None, f"Traceroute failed: {e}"
+
+        result = [
+            {
+                "distance": hop.distance,
+                "address": hop.address,
+                "avg_rtt": hop.avg_rtt,
+                "is_alive": hop.is_alive,
+            }
+            for hop in hops
+        ]
+        return result, None
 
 
 class WakeOnLanService:

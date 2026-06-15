@@ -24,6 +24,7 @@ classifiers = [
 dependencies = [
     "fastapi[standard]==0.115.6",
     "icmplib==3.0.4",
+    "dnspython==2.8.0",
     "wakeonlan==3.1.0",
     "PyYAML==6.0.2",
     "jinja2==3.1.4",
