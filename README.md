@@ -10,6 +10,9 @@ A modern network diagnostic toolkit built with FastAPI, featuring ICMP Ping, TCP
 
 - 🔍 **ICMP Ping** - Test host reachability and network latency
 - 🌐 **TCP Ping** - Test TCP port connectivity and response time
+- 🔎 **NSLookup** - Resolve hostnames to addresses (and reverse PTR lookups)
+- 📇 **Dig** - Query specific DNS record types (A, AAAA, MX, NS, TXT, ...)
+- 🗺️ **Traceroute** - Trace the network path to a host
 - 💻 **Wake On LAN** - Remote wake up network devices
 - 📋 **IP Query** - Get client's real IP address
 - 🎨 **Modern Frontend** - Responsive UI with auto light/dark theme
@@ -93,6 +96,9 @@ After starting the server, visit:
 | `/api/ping/{address}` | GET | Ping specified address |
 | `/api/tcping` | GET | TCP Ping client IP |
 | `/api/tcping/{address}` | GET | TCP Ping specified address |
+| `/api/nslookup/{address}` | GET | Resolve hostname/IP via DNS |
+| `/api/dig/{address}` | GET | Query DNS records (`?type=A`) |
+| `/api/traceroute/{address}` | GET | Trace network path to host |
 | `/api/myip` | GET | Get client IP |
 | `/api/wol/{mac_addr}` | GET | Send wake packet |
 
@@ -104,6 +110,15 @@ curl http://localhost:8000/api/ping/8.8.8.8
 
 # TCP Ping test
 curl "http://localhost:8000/api/tcping/8.8.8.8?port=53&timeout=3"
+
+# DNS lookup
+curl http://localhost:8000/api/nslookup/example.com
+
+# DNS record query (dig)
+curl "http://localhost:8000/api/dig/example.com?type=MX"
+
+# Traceroute
+curl "http://localhost:8000/api/traceroute/8.8.8.8?max_hops=20"
 
 # Get IP
 curl http://localhost:8000/api/myip

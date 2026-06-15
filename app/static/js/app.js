@@ -102,6 +102,25 @@ const API = {
         return this.get(url + (queryString ? `?${queryString}` : ''));
     },
 
+    async nslookup(address) {
+        return this.get(`/nslookup/${encodeURIComponent(address)}`);
+    },
+
+    async dig(address, type = 'A') {
+        const params = new URLSearchParams();
+        if (type && type !== 'A') params.set('type', type);
+        const queryString = params.toString();
+        return this.get(`/dig/${encodeURIComponent(address)}` + (queryString ? `?${queryString}` : ''));
+    },
+
+    async traceroute(address, maxHops = 30, timeout = 2) {
+        const params = new URLSearchParams();
+        if (maxHops !== 30) params.set('max_hops', maxHops);
+        if (timeout !== 2) params.set('timeout', timeout);
+        const queryString = params.toString();
+        return this.get(`/traceroute/${encodeURIComponent(address)}` + (queryString ? `?${queryString}` : ''));
+    },
+
     async wol(macAddress) {
         return this.get(`/wol/${encodeURIComponent(macAddress)}`);
     },
@@ -259,6 +278,224 @@ const TcpPingTool = {
     }
 };
 
+const NslookupTool = {
+    init() {
+        const form = document.getElementById('nslookup-form');
+        form?.addEventListener('submit', (e) => this.handleSubmit(e));
+    },
+
+    async handleSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const address = form.address.value.trim();
+
+        if (!address) {
+            Toast.show('请输入目标地址或域名', 'warning');
+            return;
+        }
+
+        setButtonLoading(form, true);
+        hideResult('nslookup-result');
+
+        try {
+            const { ok, data } = await API.nslookup(address);
+
+            if (ok && data.addresses && data.addresses.length > 0) {
+                let rows = `
+                    <div class="result-item">
+                        <span class="result-label">查询名称</span>
+                        <span class="result-value">${escapeHtml(data.name)}</span>
+                    </div>
+                `;
+                if (data.server) {
+                    rows += `
+                    <div class="result-item">
+                        <span class="result-label">DNS 服务器</span>
+                        <span class="result-value">${escapeHtml(data.server)}</span>
+                    </div>
+                    `;
+                }
+                if (data.canonical_name) {
+                    rows += `
+                    <div class="result-item">
+                        <span class="result-label">规范名称</span>
+                        <span class="result-value">${escapeHtml(data.canonical_name)}</span>
+                    </div>
+                    `;
+                }
+                rows += data.addresses.map(addr => `
+                    <div class="result-item">
+                        <span class="result-label">解析结果</span>
+                        <span class="result-value success">${escapeHtml(addr)}</span>
+                    </div>
+                `).join('');
+                showResult('nslookup-result', rows);
+                Toast.show('解析成功！', 'success');
+            } else {
+                const errorMsg = data.error || '未找到记录';
+                showResult('nslookup-result', `
+                    <div class="result-error">
+                        <strong>错误:</strong> ${escapeHtml(errorMsg)}
+                    </div>
+                `);
+                Toast.show('解析失败', 'error');
+            }
+        } catch (error) {
+            showResult('nslookup-result', `
+                <div class="result-error">
+                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                </div>
+            `);
+            Toast.show('请求失败', 'error');
+        } finally {
+            setButtonLoading(form, false);
+        }
+    }
+};
+
+const DigTool = {
+    init() {
+        const form = document.getElementById('dig-form');
+        form?.addEventListener('submit', (e) => this.handleSubmit(e));
+    },
+
+    async handleSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const address = form.address.value.trim();
+        const type = form.type.value;
+
+        if (!address) {
+            Toast.show('请输入域名', 'warning');
+            return;
+        }
+
+        setButtonLoading(form, true);
+        hideResult('dig-result');
+
+        try {
+            const { ok, data } = await API.dig(address, type);
+
+            if (ok && data.records && data.records.length > 0) {
+                let rows = `
+                    <div class="result-item">
+                        <span class="result-label">查询名称</span>
+                        <span class="result-value">${escapeHtml(data.name)} (${escapeHtml(data.record_type)})</span>
+                    </div>
+                `;
+                if (data.server) {
+                    rows += `
+                    <div class="result-item">
+                        <span class="result-label">DNS 服务器</span>
+                        <span class="result-value">${escapeHtml(data.server)}</span>
+                    </div>
+                    `;
+                }
+                rows += data.records.map(rec => `
+                    <div class="result-item">
+                        <span class="result-label">${escapeHtml(rec.type)}${rec.ttl !== null && rec.ttl !== undefined ? ` · TTL ${rec.ttl}s` : ''}</span>
+                        <span class="result-value success">${escapeHtml(rec.value)}</span>
+                    </div>
+                `).join('');
+                if (data.query_time !== null && data.query_time !== undefined) {
+                    rows += `
+                    <div class="result-item">
+                        <span class="result-label">查询耗时</span>
+                        <span class="result-value">${data.query_time.toFixed(2)} ms</span>
+                    </div>
+                    `;
+                }
+                showResult('dig-result', rows);
+                Toast.show('查询成功！', 'success');
+            } else {
+                const errorMsg = data.error || '未找到记录';
+                showResult('dig-result', `
+                    <div class="result-error">
+                        <strong>错误:</strong> ${escapeHtml(errorMsg)}
+                    </div>
+                `);
+                Toast.show('查询失败', 'error');
+            }
+        } catch (error) {
+            showResult('dig-result', `
+                <div class="result-error">
+                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                </div>
+            `);
+            Toast.show('请求失败', 'error');
+        } finally {
+            setButtonLoading(form, false);
+        }
+    }
+};
+
+const TracerouteTool = {
+    init() {
+        const form = document.getElementById('traceroute-form');
+        form?.addEventListener('submit', (e) => this.handleSubmit(e));
+    },
+
+    async handleSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const address = form.address.value.trim();
+        const maxHops = parseInt(form.max_hops.value) || 30;
+        const timeout = parseInt(form.timeout.value) || 2;
+
+        if (!address) {
+            Toast.show('请输入目标地址或域名', 'warning');
+            return;
+        }
+
+        setButtonLoading(form, true);
+        hideResult('traceroute-result');
+
+        try {
+            const { ok, data } = await API.traceroute(address, maxHops, timeout);
+
+            if (ok && data.hops && data.hops.length > 0) {
+                let rows = `
+                    <div class="result-item">
+                        <span class="result-label">目标地址</span>
+                        <span class="result-value">${escapeHtml(data.address)}</span>
+                    </div>
+                `;
+                rows += data.hops.map(hop => {
+                    const addr = hop.address || '*';
+                    const rtt = hop.is_alive && hop.avg_rtt !== null && hop.avg_rtt !== undefined
+                        ? formatDelay(hop.avg_rtt)
+                        : '* * *';
+                    return `
+                    <div class="result-item">
+                        <span class="result-label">第 ${hop.distance} 跳 · ${escapeHtml(addr)}</span>
+                        <span class="result-value ${hop.is_alive ? 'success' : ''}">${escapeHtml(rtt)}</span>
+                    </div>
+                    `;
+                }).join('');
+                showResult('traceroute-result', rows);
+                Toast.show('路由追踪完成！', 'success');
+            } else {
+                const errorMsg = data.error || '追踪失败';
+                showResult('traceroute-result', `
+                    <div class="result-error">
+                        <strong>错误:</strong> ${escapeHtml(errorMsg)}
+                    </div>
+                `);
+                Toast.show('追踪失败', 'error');
+            }
+        } catch (error) {
+            showResult('traceroute-result', `
+                <div class="result-error">
+                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                </div>
+            `);
+            Toast.show('请求失败', 'error');
+        } finally {
+            setButtonLoading(form, false);
+        }
+    }
+};
+
 const WakeOnLanTool = {
     init() {
         const form = document.getElementById('wol-form');
@@ -366,6 +603,9 @@ document.addEventListener('DOMContentLoaded', () => {
     TabManager.init();
     PingTool.init();
     TcpPingTool.init();
+    NslookupTool.init();
+    DigTool.init();
+    TracerouteTool.init();
     WakeOnLanTool.init();
     loadMyIp();
 });

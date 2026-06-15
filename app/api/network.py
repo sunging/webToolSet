@@ -5,13 +5,22 @@ from typing import Annotated
 from fastapi import APIRouter, Path, Query, Request, Response, status
 
 from app.models.responses import (
+    DigResponse,
     ErrorResponse,
     MyIpResponse,
+    NslookupResponse,
     PingResponse,
     TcpPingResponse,
+    TracerouteResponse,
     WakeOnLanResponse,
 )
-from app.services.network import PingService, TcpPingService, WakeOnLanService
+from app.services.network import (
+    DnsService,
+    PingService,
+    TcpPingService,
+    TracerouteService,
+    WakeOnLanService,
+)
 from app.utils.iputils import get_real_ip
 
 router = APIRouter(prefix="/api", tags=["Network Tools"])
@@ -114,6 +123,129 @@ async def tcping(
         return TcpPingResponse(error=error)
 
     return TcpPingResponse(delay=delay)
+
+
+@router.get(
+    "/nslookup/{address}",
+    response_model=NslookupResponse,
+    responses={404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+)
+async def nslookup(response: Response, address: str) -> NslookupResponse:
+    """
+    Resolve a hostname to addresses, or an IP address to a name.
+
+    Args:
+        response: The FastAPI response object.
+        address: The hostname or IP address to look up.
+
+    Returns:
+        NslookupResponse with resolved addresses or error message.
+
+    """
+    result, error = DnsService.nslookup(address)
+
+    if error:
+        if "does not exist" in error or "No DNS records" in error:
+            response.status_code = status.HTTP_404_NOT_FOUND
+        else:
+            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return NslookupResponse(name=address, error=error)
+
+    return NslookupResponse(
+        name=address,
+        server=result["server"],
+        addresses=result["addresses"],
+        canonical_name=result["canonical_name"],
+    )
+
+
+@router.get(
+    "/dig/{address}",
+    response_model=DigResponse,
+    responses={404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+)
+async def dig(
+    response: Response,
+    address: str,
+    type: Annotated[
+        str,
+        Query(
+            pattern=r"^(?i:A|AAAA|CNAME|MX|NS|TXT|SOA|PTR|SRV|CAA)$",
+            description="DNS record type to query",
+        ),
+    ] = "A",
+) -> DigResponse:
+    """
+    Perform a dig-style DNS query for a specific record type.
+
+    Args:
+        response: The FastAPI response object.
+        address: The domain name to query.
+        type: DNS record type (A, AAAA, CNAME, MX, NS, TXT, SOA, PTR, SRV, CAA).
+
+    Returns:
+        DigResponse with returned records or error message.
+
+    """
+    record_type = type.upper()
+    result, error = DnsService.dig(address, record_type=record_type)
+
+    if error:
+        if "does not exist" in error or "No " in error:
+            response.status_code = status.HTTP_404_NOT_FOUND
+        else:
+            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return DigResponse(name=address, record_type=record_type, error=error)
+
+    return DigResponse(
+        name=address,
+        record_type=record_type,
+        server=result["server"],
+        records=result["records"],
+        query_time=result["query_time"],
+    )
+
+
+@router.get(
+    "/traceroute/{address}",
+    response_model=TracerouteResponse,
+    responses={404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+)
+async def traceroute(
+    response: Response,
+    address: str,
+    max_hops: Annotated[
+        int, Query(ge=1, le=64, description="Maximum number of hops")
+    ] = 30,
+    timeout: Annotated[
+        int, Query(ge=1, le=30, description="Per-hop timeout in seconds")
+    ] = 2,
+) -> TracerouteResponse:
+    """
+    Trace the network path to a host.
+
+    Args:
+        response: The FastAPI response object.
+        address: The target IP address or hostname.
+        max_hops: Maximum number of hops to probe (1-64).
+        timeout: Per-hop timeout in seconds (1-30).
+
+    Returns:
+        TracerouteResponse with the list of hops or error message.
+
+    """
+    hops, error = TracerouteService.traceroute(
+        address, max_hops=max_hops, timeout=timeout
+    )
+
+    if error:
+        if "Name lookup" in error:
+            response.status_code = status.HTTP_404_NOT_FOUND
+        else:
+            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return TracerouteResponse(address=address, error=error)
+
+    return TracerouteResponse(address=address, hops=hops)
 
 
 @router.get(
