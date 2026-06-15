@@ -503,6 +503,22 @@ main {
     border-radius: var(--radius-md);
 }
 
+.result-pre {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 420px;
+    overflow: auto;
+}
+
 /* Footer */
 footer {
     background: var(--bg-secondary);

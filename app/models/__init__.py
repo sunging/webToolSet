@@ -11,6 +11,7 @@ from app.models.responses import (
     TracerouteHop,
     TracerouteResponse,
     WakeOnLanResponse,
+    WhoisResponse,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "TracerouteHop",
     "TracerouteResponse",
     "WakeOnLanResponse",
+    "WhoisResponse",
 ]

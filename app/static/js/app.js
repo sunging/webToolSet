@@ -121,6 +121,10 @@ const API = {
         return this.get(`/traceroute/${encodeURIComponent(address)}` + (queryString ? `?${queryString}` : ''));
     },
 
+    async whois(query) {
+        return this.get(`/whois/${encodeURIComponent(query)}`);
+    },
+
     async wol(macAddress) {
         return this.get(`/wol/${encodeURIComponent(macAddress)}`);
     },
@@ -496,6 +500,68 @@ const TracerouteTool = {
     }
 };
 
+const WhoisTool = {
+    init() {
+        const form = document.getElementById('whois-form');
+        form?.addEventListener('submit', (e) => this.handleSubmit(e));
+    },
+
+    async handleSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const query = form.query.value.trim();
+
+        if (!query) {
+            Toast.show('请输入域名或 IP 地址', 'warning');
+            return;
+        }
+
+        setButtonLoading(form, true);
+        hideResult('whois-result');
+
+        try {
+            const { ok, data } = await API.whois(query);
+
+            if (ok && data.raw) {
+                let rows = `
+                    <div class="result-item">
+                        <span class="result-label">查询对象</span>
+                        <span class="result-value">${escapeHtml(data.query)}</span>
+                    </div>
+                `;
+                if (data.server) {
+                    rows += `
+                    <div class="result-item">
+                        <span class="result-label">WHOIS 服务器</span>
+                        <span class="result-value">${escapeHtml(data.server)}</span>
+                    </div>
+                    `;
+                }
+                rows += `<pre class="result-pre">${escapeHtml(data.raw)}</pre>`;
+                showResult('whois-result', rows);
+                Toast.show('查询成功！', 'success');
+            } else {
+                const errorMsg = data.error || '未找到记录';
+                showResult('whois-result', `
+                    <div class="result-error">
+                        <strong>错误:</strong> ${escapeHtml(errorMsg)}
+                    </div>
+                `);
+                Toast.show('查询失败', 'error');
+            }
+        } catch (error) {
+            showResult('whois-result', `
+                <div class="result-error">
+                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                </div>
+            `);
+            Toast.show('请求失败', 'error');
+        } finally {
+            setButtonLoading(form, false);
+        }
+    }
+};
+
 const WakeOnLanTool = {
     init() {
         const form = document.getElementById('wol-form');
@@ -606,6 +672,7 @@ document.addEventListener('DOMContentLoaded', () => {
     NslookupTool.init();
     DigTool.init();
     TracerouteTool.init();
+    WhoisTool.init();
     WakeOnLanTool.init();
     loadMyIp();
 });

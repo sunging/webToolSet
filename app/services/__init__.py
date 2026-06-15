@@ -6,6 +6,7 @@ from app.services.network import (
     TcpPingService,
     TracerouteService,
     WakeOnLanService,
+    WhoisService,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "TcpPingService",
     "TracerouteService",
     "WakeOnLanService",
+    "WhoisService",
 ]
