@@ -79,6 +79,15 @@ class TracerouteResponse(BaseModel):
     error: str | None = Field(None, description="Error message if traceroute failed")
 
 
+class WhoisResponse(BaseModel):
+    """Response model for whois endpoint."""
+
+    query: str = Field(description="Queried domain or IP address")
+    server: str | None = Field(None, description="WHOIS server that answered")
+    raw: str | None = Field(None, description="Raw WHOIS response text")
+    error: str | None = Field(None, description="Error message if lookup failed")
+
+
 class WakeOnLanResponse(BaseModel):
     """Response model for wake on lan endpoint."""
 

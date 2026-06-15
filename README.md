@@ -13,6 +13,7 @@ A modern network diagnostic toolkit built with FastAPI, featuring ICMP Ping, TCP
 - 🔎 **NSLookup** - Resolve hostnames to addresses (and reverse PTR lookups)
 - 📇 **Dig** - Query specific DNS record types (A, AAAA, MX, NS, TXT, ...)
 - 🗺️ **Traceroute** - Trace the network path to a host
+- 📜 **Whois** - Look up registration info for domains and IPs
 - 💻 **Wake On LAN** - Remote wake up network devices
 - 📋 **IP Query** - Get client's real IP address
 - 🎨 **Modern Frontend** - Responsive UI with auto light/dark theme
@@ -99,6 +100,7 @@ After starting the server, visit:
 | `/api/nslookup/{address}` | GET | Resolve hostname/IP via DNS |
 | `/api/dig/{address}` | GET | Query DNS records (`?type=A`) |
 | `/api/traceroute/{address}` | GET | Trace network path to host |
+| `/api/whois/{query}` | GET | WHOIS lookup for domain/IP |
 | `/api/myip` | GET | Get client IP |
 | `/api/wol/{mac_addr}` | GET | Send wake packet |
 
@@ -119,6 +121,9 @@ curl "http://localhost:8000/api/dig/example.com?type=MX"
 
 # Traceroute
 curl "http://localhost:8000/api/traceroute/8.8.8.8?max_hops=20"
+
+# Whois lookup
+curl http://localhost:8000/api/whois/example.com
 
 # Get IP
 curl http://localhost:8000/api/myip

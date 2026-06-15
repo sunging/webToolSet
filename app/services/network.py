@@ -2,6 +2,7 @@
 
 import ipaddress
 import logging
+import re
 import socket
 import time
 
@@ -248,6 +249,82 @@ class TracerouteService:
             for hop in hops
         ]
         return result, None
+
+
+class WhoisService:
+    """Service for WHOIS lookups (registration info for domains and IPs)."""
+
+    IANA_SERVER = "whois.iana.org"
+    WHOIS_PORT = 43
+    MAX_REFERRALS = 3
+    _REFERRAL_PATTERN = re.compile(
+        r"^\s*(?:refer|whois|Registrar WHOIS Server|ReferralServer)\s*:\s*"
+        r"(?:whois://)?([A-Za-z0-9.\-]+)",
+        re.IGNORECASE | re.MULTILINE,
+    )
+
+    @staticmethod
+    def _query(server: str, query: str, timeout: int) -> str:
+        """Send a single WHOIS query to a server and return the raw response."""
+        with socket.create_connection((server, WhoisService.WHOIS_PORT), timeout) as s:
+            s.settimeout(timeout)
+            s.sendall((query + "\r\n").encode("utf-8"))
+            chunks = []
+            while True:
+                data = s.recv(4096)
+                if not data:
+                    break
+                chunks.append(data)
+        return b"".join(chunks).decode("utf-8", "replace")
+
+    @staticmethod
+    def whois(
+        query: str, timeout: int = 10
+    ) -> tuple[dict | None, str | None]:
+        """
+        Perform a WHOIS lookup, following referrals to the authoritative server.
+
+        Args:
+            query: The domain name or IP address to look up.
+            timeout: Per-connection timeout in seconds.
+
+        Returns:
+            A tuple of (result, error_message). result is a dict with keys
+            ``server`` (the last server queried) and ``raw`` (the full text).
+
+        """
+        query = query.strip()
+        if not query:
+            return None, "Empty query"
+
+        server = WhoisService.IANA_SERVER
+        seen = {server}
+        raw = ""
+
+        try:
+            for _ in range(WhoisService.MAX_REFERRALS + 1):
+                raw = WhoisService._query(server, query, timeout)
+
+                match = WhoisService._REFERRAL_PATTERN.search(raw)
+                if not match:
+                    break
+                referral = match.group(1).lower()
+                if referral in seen:
+                    break
+                seen.add(referral)
+                server = referral
+        except socket.gaierror as e:
+            return None, f"WHOIS server lookup failed: {e}"
+        except (socket.timeout, TimeoutError):
+            return None, "WHOIS query timed out"
+        except OSError as e:
+            logger.debug(f"whois error: {e}")
+            return None, f"WHOIS query failed: {e}"
+
+        if not raw.strip():
+            return None, f"No WHOIS data found for {query}"
+
+        return {"server": server, "raw": raw}, None
 
 
 class WakeOnLanService:

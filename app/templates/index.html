@@ -62,6 +62,7 @@
             <button class="tab-btn" data-tab="nslookup">NSLookup</button>
             <button class="tab-btn" data-tab="dig">Dig</button>
             <button class="tab-btn" data-tab="traceroute">Traceroute</button>
+            <button class="tab-btn" data-tab="whois">Whois</button>
             <button class="tab-btn" data-tab="wol">Wake On LAN</button>
         </div>
 
@@ -282,6 +283,43 @@
                 </form>
 
                 <div id="traceroute-result" class="result-container hidden">
+                    <h4>结果</h4>
+                    <div class="result-content"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Whois -->
+        <section id="whois-tab" class="tab-content">
+            <div class="card">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    Whois
+                </h2>
+                <p class="description">查询域名或 IP 地址的注册信息</p>
+
+                <form id="whois-form" class="tool-form">
+                    <div class="form-group">
+                        <label for="whois-query">域名或 IP 地址</label>
+                        <input type="text" id="whois-query" name="query"
+                               placeholder="输入域名（如 example.com）或 IP 地址">
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span class="btn-text">开始查询</span>
+                        <span class="btn-loading hidden">
+                            <svg class="spinner" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
+                            </svg>
+                            处理中...
+                        </span>
+                    </button>
+                </form>
+
+                <div id="whois-result" class="result-container hidden">
                     <h4>结果</h4>
                     <div class="result-content"></div>
                 </div>

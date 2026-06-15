@@ -179,6 +179,28 @@ class TestTracerouteEndpoint:
         assert response.status_code == 422
 
 
+class TestWhoisEndpoint:
+    """Tests for the /api/whois endpoint."""
+
+    def test_whois_domain(self):
+        """Test whois lookup for a well-known domain."""
+        response = client.get("/api/whois/example.com")
+        # Requires outbound TCP/43; accept error structure too.
+        assert response.status_code in [200, 404, 500]
+        data = response.json()
+        assert data["query"] == "example.com"
+        if response.status_code == 200:
+            assert data["raw"]
+            assert data["server"] is not None
+        else:
+            assert data["error"] is not None
+
+    def test_whois_invalid_timeout(self):
+        """Test whois with out-of-range timeout returns validation error."""
+        response = client.get("/api/whois/example.com?timeout=999")
+        assert response.status_code == 422
+
+
 class TestWakeOnLanEndpoint:
     """Tests for the /api/wol endpoint."""
 

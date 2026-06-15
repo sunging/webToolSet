@@ -13,6 +13,7 @@ from app.models.responses import (
     TcpPingResponse,
     TracerouteResponse,
     WakeOnLanResponse,
+    WhoisResponse,
 )
 from app.services.network import (
     DnsService,
@@ -20,6 +21,7 @@ from app.services.network import (
     TcpPingService,
     TracerouteService,
     WakeOnLanService,
+    WhoisService,
 )
 from app.utils.iputils import get_real_ip
 
@@ -246,6 +248,42 @@ async def traceroute(
         return TracerouteResponse(address=address, error=error)
 
     return TracerouteResponse(address=address, hops=hops)
+
+
+@router.get(
+    "/whois/{query}",
+    response_model=WhoisResponse,
+    responses={404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+)
+async def whois(
+    response: Response,
+    query: str,
+    timeout: Annotated[
+        int, Query(ge=1, le=30, description="Per-connection timeout in seconds")
+    ] = 10,
+) -> WhoisResponse:
+    """
+    Look up WHOIS registration information for a domain or IP address.
+
+    Args:
+        response: The FastAPI response object.
+        query: The domain name or IP address to look up.
+        timeout: Per-connection timeout in seconds (1-30).
+
+    Returns:
+        WhoisResponse with the raw WHOIS text or error message.
+
+    """
+    result, error = WhoisService.whois(query, timeout=timeout)
+
+    if error:
+        if "No WHOIS data" in error:
+            response.status_code = status.HTTP_404_NOT_FOUND
+        else:
+            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return WhoisResponse(query=query, error=error)
+
+    return WhoisResponse(query=query, server=result["server"], raw=result["raw"])
 
 
 @router.get(
