@@ -129,6 +129,13 @@ const API = {
         return this.get(`/wol/${encodeURIComponent(macAddress)}`);
     },
 
+    async portCheck(address, port, timeout = 3) {
+        const params = new URLSearchParams();
+        if (timeout !== 3) params.set('timeout', timeout);
+        const queryString = params.toString();
+        return this.get(`/port/${encodeURIComponent(address)}/${port}` + (queryString ? `?${queryString}` : ''));
+    },
+
     async getMyIp() {
         return this.get('/myip');
     }
@@ -639,6 +646,78 @@ const WakeOnLanTool = {
     }
 };
 
+const PortCheckTool = {
+    init() {
+        const form = document.getElementById('portcheck-form');
+        form?.addEventListener('submit', (e) => this.handleSubmit(e));
+    },
+
+    async handleSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const address = form.address.value.trim();
+        const port = parseInt(form.port.value) || 80;
+        const timeout = parseFloat(form.timeout.value) || 3;
+
+        if (!address) {
+            Toast.show('请输入目标地址', 'warning');
+            return;
+        }
+
+        setButtonLoading(form, true);
+        hideResult('portcheck-result');
+
+        try {
+            const { ok, status, data } = await API.portCheck(address, port, timeout);
+
+            const statusClass = data.open ? 'success' : 'error';
+            const statusText = data.open ? '开放' : '关闭';
+
+            let rows = `
+                <div class="result-item">
+                    <span class="result-label">目标地址</span>
+                    <span class="result-value">${escapeHtml(data.address)}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">端口</span>
+                    <span class="result-value">${data.port}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">状态</span>
+                    <span class="result-value ${statusClass}">${statusText}</span>
+                </div>
+            `;
+            if (data.open && data.latency !== null && data.latency !== undefined) {
+                rows += `
+                <div class="result-item">
+                    <span class="result-label">连接延迟</span>
+                    <span class="result-value success">${formatDelay(data.latency)}</span>
+                </div>
+                `;
+            }
+            if (data.error) {
+                rows += `
+                <div class="result-item">
+                    <span class="result-label">详情</span>
+                    <span class="result-value">${escapeHtml(data.error)}</span>
+                </div>
+                `;
+            }
+            showResult('portcheck-result', rows);
+            Toast.show(data.open ? '端口开放！' : '端口未开放', data.open ? 'success' : 'warning');
+        } catch (error) {
+            showResult('portcheck-result', `
+                <div class="result-error">
+                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                </div>
+            `);
+            Toast.show('请求失败', 'error');
+        } finally {
+            setButtonLoading(form, false);
+        }
+    }
+};
+
 // My IP display
 async function loadMyIp() {
     const ipElement = document.getElementById('my-ip');
@@ -674,5 +753,6 @@ document.addEventListener('DOMContentLoaded', () => {
     TracerouteTool.init();
     WhoisTool.init();
     WakeOnLanTool.init();
+    PortCheckTool.init();
     loadMyIp();
 });

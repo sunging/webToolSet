@@ -224,6 +224,74 @@ class TestWakeOnLanEndpoint:
         assert data["rst"] == "success"
 
 
+class TestPortCheckEndpoint:
+    """Tests for the /api/port endpoint."""
+
+    def test_port_open(self):
+        """Test that an actually open port is detected as open."""
+        import socket
+        import threading
+
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("127.0.0.1", 0))
+        server.listen(1)
+        port = server.getsockname()[1]
+
+        def accept_and_close():
+            try:
+                conn, _ = server.accept()
+                conn.close()
+            except Exception:
+                pass
+
+        t = threading.Thread(target=accept_and_close, daemon=True)
+        t.start()
+
+        response = client.get(f"/api/port/127.0.0.1/{port}")
+        server.close()
+        t.join(timeout=2)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["open"] is True
+        assert data["latency"] is not None
+        assert data["address"] == "127.0.0.1"
+        assert data["port"] == port
+
+    def test_port_closed(self):
+        """Test that a closed port is correctly reported."""
+        response = client.get("/api/port/127.0.0.1/19998")
+        data = response.json()
+        assert data["open"] is False
+        assert data["error"] is not None
+
+    def test_port_invalid_range_low(self):
+        """Test that port 0 is rejected with a validation error."""
+        response = client.get("/api/port/127.0.0.1/0")
+        assert response.status_code == 422
+
+    def test_port_invalid_range_high(self):
+        """Test that port 65536 is rejected with a validation error."""
+        response = client.get("/api/port/127.0.0.1/65536")
+        assert response.status_code == 422
+
+    def test_port_invalid_host(self):
+        """Test that an invalid hostname returns an error without raising."""
+        response = client.get("/api/port/this.host.does.not.exist.invalid/80")
+        data = response.json()
+        assert data["open"] is False
+        assert data["error"] is not None
+
+    def test_port_response_structure(self):
+        """Test that the response always contains required fields."""
+        response = client.get("/api/port/127.0.0.1/19998")
+        data = response.json()
+        assert "address" in data
+        assert "port" in data
+        assert "open" in data
+
+
 class TestLegacyEndpoints:
     """Tests for legacy API endpoints (backward compatibility)."""
 

@@ -88,6 +88,16 @@ class WhoisResponse(BaseModel):
     error: str | None = Field(None, description="Error message if lookup failed")
 
 
+class PortCheckResponse(BaseModel):
+    """Response model for port check endpoint."""
+
+    address: str = Field(description="Target address")
+    port: int = Field(description="Target port number")
+    open: bool = Field(description="Whether the port is open")
+    latency: float | None = Field(None, description="Connection latency in milliseconds")
+    error: str | None = Field(None, description="Error message if check failed")
+
+
 class WakeOnLanResponse(BaseModel):
     """Response model for wake on lan endpoint."""
 
