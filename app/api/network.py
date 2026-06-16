@@ -10,6 +10,7 @@ from app.models.responses import (
     MyIpResponse,
     NslookupResponse,
     PingResponse,
+    PortCheckResponse,
     TcpPingResponse,
     TracerouteResponse,
     WakeOnLanResponse,
@@ -18,6 +19,7 @@ from app.models.responses import (
 from app.services.network import (
     DnsService,
     PingService,
+    PortCheckService,
     TcpPingService,
     TracerouteService,
     WakeOnLanService,
@@ -303,6 +305,52 @@ async def get_my_ip(request: Request) -> MyIpResponse:
     """
     ip = get_real_ip(request) or "unknown"
     return MyIpResponse(ip=ip)
+
+
+@router.get(
+    "/port/{address}/{port}",
+    response_model=PortCheckResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    },
+)
+async def port_check(
+    response: Response,
+    address: str,
+    port: Annotated[int, Path(ge=1, le=65535, description="TCP port number to test")],
+    timeout: Annotated[
+        float, Query(ge=0.1, le=30.0, description="Connection timeout in seconds")
+    ] = 3.0,
+) -> PortCheckResponse:
+    """
+    Test whether a TCP port is open on the given host.
+
+    Args:
+        response: The FastAPI response object.
+        address: The target IP address or hostname.
+        port: The TCP port number to test (1-65535).
+        timeout: Connection timeout in seconds (0.1-30).
+
+    Returns:
+        PortCheckResponse indicating whether the port is open, with optional latency.
+
+    """
+    is_open, latency, error = PortCheckService.check(address, port, timeout=timeout)
+
+    if error and "Name resolution" in error:
+        response.status_code = status.HTTP_404_NOT_FOUND
+    elif error and "timed out" in error:
+        response.status_code = status.HTTP_408_REQUEST_TIMEOUT
+
+    return PortCheckResponse(
+        address=address,
+        port=port,
+        open=is_open,
+        latency=latency,
+        error=error,
+    )
 
 
 @router.get(
