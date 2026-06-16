@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Tool Set - 网络工具集</title>
+    <title>Web Tool Set - Network Toolkit</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
 </head>
@@ -18,8 +18,8 @@
                 </svg>
                 Web Tool Set
             </h1>
-            <p class="subtitle">网络诊断工具集</p>
-            <button id="theme-toggle" class="theme-toggle" aria-label="切换主题">
+            <p class="subtitle">Network Diagnostic Toolkit</p>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
                 <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="5"/>
                     <line x1="12" y1="1" x2="12" y2="3"/>
@@ -39,7 +39,7 @@
     </header>
 
     <main class="container">
-        <!-- 快捷信息卡片 -->
+        <!-- Quick info cards -->
         <section class="info-cards">
             <div class="card info-card">
                 <div class="card-icon">
@@ -49,13 +49,13 @@
                     </svg>
                 </div>
                 <div class="card-content">
-                    <h3>我的 IP</h3>
-                    <p id="my-ip" class="info-value">检测中...</p>
+                    <h3>My IP</h3>
+                    <p id="my-ip" class="info-value">Detecting...</p>
                 </div>
             </div>
         </section>
 
-        <!-- 工具标签页 -->
+        <!-- Tool tabs -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="ping">ICMP Ping</button>
             <button class="tab-btn" data-tab="tcping">TCP Ping</button>
@@ -63,7 +63,7 @@
             <button class="tab-btn" data-tab="dig">Dig</button>
             <button class="tab-btn" data-tab="traceroute">Traceroute</button>
             <button class="tab-btn" data-tab="whois">Whois</button>
-            <button class="tab-btn" data-tab="portcheck">端口检测</button>
+            <button class="tab-btn" data-tab="portcheck">Port Check</button>
             <button class="tab-btn" data-tab="wol">Wake On LAN</button>
         </div>
 
@@ -77,27 +77,27 @@
                     </svg>
                     ICMP Ping
                 </h2>
-                <p class="description">测试主机的可达性和网络延迟</p>
+                <p class="description">Test host reachability and network latency</p>
                 
                 <form id="ping-form" class="tool-form">
                     <div class="form-group">
-                        <label for="ping-address">目标地址</label>
-                        <input type="text" id="ping-address" name="address" 
-                               placeholder="输入 IP 地址或域名（留空则 ping 本机 IP）">
+                        <label for="ping-address">Target Address</label>
+                        <input type="text" id="ping-address" name="address"
+                               placeholder="Enter IP address or domain (leave empty to ping your own IP)">
                     </div>
                     <button type="submit" class="btn-primary">
-                        <span class="btn-text">开始 Ping</span>
+                        <span class="btn-text">Start Ping</span>
                         <span class="btn-loading hidden">
                             <svg class="spinner" viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
                             </svg>
-                            处理中...
+                            Processing...
                         </span>
                     </button>
                 </form>
 
                 <div id="ping-result" class="result-container hidden">
-                    <h4>结果</h4>
+                    <h4>Result</h4>
                     <div class="result-content"></div>
                 </div>
             </div>
@@ -112,39 +112,39 @@
                     </svg>
                     TCP Ping
                 </h2>
-                <p class="description">测试 TCP 端口的连通性和响应时间</p>
+                <p class="description">Test TCP port connectivity and response time</p>
                 
                 <form id="tcping-form" class="tool-form">
                     <div class="form-row">
                         <div class="form-group flex-grow">
-                            <label for="tcping-address">目标地址</label>
+                            <label for="tcping-address">Target Address</label>
                             <input type="text" id="tcping-address" name="address" 
-                                   placeholder="输入 IP 地址或域名">
+                                   placeholder="Enter IP address or domain">
                         </div>
                         <div class="form-group form-group-small">
-                            <label for="tcping-port">端口</label>
+                            <label for="tcping-port">Port</label>
                             <input type="number" id="tcping-port" name="port" value="80" 
                                    min="1" max="65535" placeholder="80">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="tcping-timeout">超时时间（秒）</label>
+                        <label for="tcping-timeout">Timeout (seconds)</label>
                         <input type="number" id="tcping-timeout" name="timeout" value="2" 
                                min="1" max="30">
                     </div>
                     <button type="submit" class="btn-primary">
-                        <span class="btn-text">开始 TCP Ping</span>
+                        <span class="btn-text">Start TCP Ping</span>
                         <span class="btn-loading hidden">
                             <svg class="spinner" viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
                             </svg>
-                            处理中...
+                            Processing...
                         </span>
                     </button>
                 </form>
 
                 <div id="tcping-result" class="result-container hidden">
-                    <h4>结果</h4>
+                    <h4>Result</h4>
                     <div class="result-content"></div>
                 </div>
             </div>
@@ -160,27 +160,27 @@
                     </svg>
                     NSLookup
                 </h2>
-                <p class="description">解析域名对应的 IP 地址（或反向解析 IP）</p>
+                <p class="description">Resolve a domain to its IP address (or reverse-resolve an IP)</p>
 
                 <form id="nslookup-form" class="tool-form">
                     <div class="form-group">
-                        <label for="nslookup-address">域名或 IP 地址</label>
+                        <label for="nslookup-address">Domain or IP Address</label>
                         <input type="text" id="nslookup-address" name="address"
-                               placeholder="输入域名（如 example.com）或 IP 地址">
+                               placeholder="Enter domain (e.g. example.com) or IP address">
                     </div>
                     <button type="submit" class="btn-primary">
-                        <span class="btn-text">开始解析</span>
+                        <span class="btn-text">Resolve</span>
                         <span class="btn-loading hidden">
                             <svg class="spinner" viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
                             </svg>
-                            处理中...
+                            Processing...
                         </span>
                     </button>
                 </form>
 
                 <div id="nslookup-result" class="result-container hidden">
-                    <h4>结果</h4>
+                    <h4>Result</h4>
                     <div class="result-content"></div>
                 </div>
             </div>
@@ -197,17 +197,17 @@
                     </svg>
                     Dig
                 </h2>
-                <p class="description">查询指定类型的 DNS 记录</p>
+                <p class="description">Query DNS records of a specific type</p>
 
                 <form id="dig-form" class="tool-form">
                     <div class="form-row">
                         <div class="form-group flex-grow">
-                            <label for="dig-address">域名</label>
+                            <label for="dig-address">Domain</label>
                             <input type="text" id="dig-address" name="address"
-                                   placeholder="输入域名（如 example.com）">
+                                   placeholder="Enter domain (e.g. example.com)">
                         </div>
                         <div class="form-group form-group-small">
-                            <label for="dig-type">记录类型</label>
+                            <label for="dig-type">Record Type</label>
                             <select id="dig-type" name="type">
                                 <option value="A">A</option>
                                 <option value="AAAA">AAAA</option>
@@ -223,18 +223,18 @@
                         </div>
                     </div>
                     <button type="submit" class="btn-primary">
-                        <span class="btn-text">开始查询</span>
+                        <span class="btn-text">Query</span>
                         <span class="btn-loading hidden">
                             <svg class="spinner" viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
                             </svg>
-                            处理中...
+                            Processing...
                         </span>
                     </button>
                 </form>
 
                 <div id="dig-result" class="result-container hidden">
-                    <h4>结果</h4>
+                    <h4>Result</h4>
                     <div class="result-content"></div>
                 </div>
             </div>
@@ -252,39 +252,39 @@
                     </svg>
                     Traceroute
                 </h2>
-                <p class="description">追踪到达目标主机的网络路径</p>
+                <p class="description">Trace the network path to the target host</p>
 
                 <form id="traceroute-form" class="tool-form">
                     <div class="form-group">
-                        <label for="traceroute-address">目标地址</label>
+                        <label for="traceroute-address">Target Address</label>
                         <input type="text" id="traceroute-address" name="address"
-                               placeholder="输入 IP 地址或域名">
+                               placeholder="Enter IP address or domain">
                     </div>
                     <div class="form-row">
                         <div class="form-group form-group-small">
-                            <label for="traceroute-max-hops">最大跳数</label>
+                            <label for="traceroute-max-hops">Max Hops</label>
                             <input type="number" id="traceroute-max-hops" name="max_hops" value="30"
                                    min="1" max="64">
                         </div>
                         <div class="form-group form-group-small">
-                            <label for="traceroute-timeout">超时时间（秒）</label>
+                            <label for="traceroute-timeout">Timeout (seconds)</label>
                             <input type="number" id="traceroute-timeout" name="timeout" value="2"
                                    min="1" max="30">
                         </div>
                     </div>
                     <button type="submit" class="btn-primary">
-                        <span class="btn-text">开始追踪</span>
+                        <span class="btn-text">Start Trace</span>
                         <span class="btn-loading hidden">
                             <svg class="spinner" viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
                             </svg>
-                            处理中...
+                            Processing...
                         </span>
                     </button>
                 </form>
 
                 <div id="traceroute-result" class="result-container hidden">
-                    <h4>结果</h4>
+                    <h4>Result</h4>
                     <div class="result-content"></div>
                 </div>
             </div>
@@ -301,33 +301,33 @@
                     </svg>
                     Whois
                 </h2>
-                <p class="description">查询域名或 IP 地址的注册信息</p>
+                <p class="description">Look up registration info for a domain or IP address</p>
 
                 <form id="whois-form" class="tool-form">
                     <div class="form-group">
-                        <label for="whois-query">域名或 IP 地址</label>
+                        <label for="whois-query">Domain or IP Address</label>
                         <input type="text" id="whois-query" name="query"
-                               placeholder="输入域名（如 example.com）或 IP 地址">
+                               placeholder="Enter domain (e.g. example.com) or IP address">
                     </div>
                     <button type="submit" class="btn-primary">
-                        <span class="btn-text">开始查询</span>
+                        <span class="btn-text">Query</span>
                         <span class="btn-loading hidden">
                             <svg class="spinner" viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
                             </svg>
-                            处理中...
+                            Processing...
                         </span>
                     </button>
                 </form>
 
                 <div id="whois-result" class="result-container hidden">
-                    <h4>结果</h4>
+                    <h4>Result</h4>
                     <div class="result-content"></div>
                 </div>
             </div>
         </section>
 
-        <!-- 端口检测 -->
+        <!-- Port Check -->
         <section id="portcheck-tab" class="tab-content">
             <div class="card">
                 <h2>
@@ -336,41 +336,41 @@
                         <line x1="8" y1="21" x2="16" y2="21"/>
                         <line x1="12" y1="17" x2="12" y2="21"/>
                     </svg>
-                    端口检测
+                    Port Check
                 </h2>
-                <p class="description">检测目标主机的 TCP 端口是否开放</p>
+                <p class="description">Check whether a TCP port on the target host is open</p>
 
                 <form id="portcheck-form" class="tool-form">
                     <div class="form-row">
                         <div class="form-group flex-grow">
-                            <label for="portcheck-address">目标地址</label>
+                            <label for="portcheck-address">Target Address</label>
                             <input type="text" id="portcheck-address" name="address"
-                                   placeholder="输入 IP 地址或域名">
+                                   placeholder="Enter IP address or domain">
                         </div>
                         <div class="form-group form-group-small">
-                            <label for="portcheck-port">端口</label>
+                            <label for="portcheck-port">Port</label>
                             <input type="number" id="portcheck-port" name="port" value="80"
                                    min="1" max="65535" placeholder="80">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="portcheck-timeout">超时时间（秒）</label>
+                        <label for="portcheck-timeout">Timeout (seconds)</label>
                         <input type="number" id="portcheck-timeout" name="timeout" value="3"
                                min="1" max="30">
                     </div>
                     <button type="submit" class="btn-primary">
-                        <span class="btn-text">开始检测</span>
+                        <span class="btn-text">Start Check</span>
                         <span class="btn-loading hidden">
                             <svg class="spinner" viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
                             </svg>
-                            处理中...
+                            Processing...
                         </span>
                     </button>
                 </form>
 
                 <div id="portcheck-result" class="result-container hidden">
-                    <h4>结果</h4>
+                    <h4>Result</h4>
                     <div class="result-content"></div>
                 </div>
             </div>
@@ -389,29 +389,29 @@
                     </svg>
                     Wake On LAN
                 </h2>
-                <p class="description">远程唤醒网络设备</p>
+                <p class="description">Remotely wake a network device</p>
                 
                 <form id="wol-form" class="tool-form">
                     <div class="form-group">
-                        <label for="wol-mac">MAC 地址</label>
+                        <label for="wol-mac">MAC Address</label>
                         <input type="text" id="wol-mac" name="mac" 
                                placeholder="XX:XX:XX:XX:XX:XX" 
                                pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$">
-                        <small class="hint">格式：XX:XX:XX:XX:XX:XX 或 XX-XX-XX-XX-XX-XX</small>
+                        <small class="hint">Format: XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX</small>
                     </div>
                     <button type="submit" class="btn-primary">
-                        <span class="btn-text">发送唤醒包</span>
+                        <span class="btn-text">Send Magic Packet</span>
                         <span class="btn-loading hidden">
                             <svg class="spinner" viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
                             </svg>
-                            处理中...
+                            Processing...
                         </span>
                     </button>
                 </form>
 
                 <div id="wol-result" class="result-container hidden">
-                    <h4>结果</h4>
+                    <h4>Result</h4>
                     <div class="result-content"></div>
                 </div>
             </div>
@@ -422,9 +422,9 @@
         <div class="container">
             <p>Web Tool Set v1.0.0 | Powered by FastAPI</p>
             <p>
-                <a href="/docs" target="_blank">API 文档</a>
+                <a href="/docs" target="_blank">API Docs</a>
                 <span class="separator">|</span>
-                <a href="/api/health">健康检查</a>
+                <a href="/api/health">Health Check</a>
             </p>
         </div>
     </footer>
