@@ -327,6 +327,40 @@ class WhoisService:
         return {"server": server, "raw": raw}, None
 
 
+class PortCheckService:
+    """Service for TCP port connectivity checks."""
+
+    @staticmethod
+    def check(
+        address: str, port: int, timeout: float = 3.0
+    ) -> tuple[bool, float | None, str | None]:
+        """
+        Test whether a TCP port is open on the given address.
+
+        Args:
+            address: The target IP address or hostname.
+            port: The TCP port number to test.
+            timeout: Connection timeout in seconds.
+
+        Returns:
+            A tuple of (open, latency_ms, error_message).
+
+        """
+        try:
+            start = time.monotonic()
+            with socket.create_connection((address, port), timeout=timeout):
+                latency = round((time.monotonic() - start) * 1000, 2)
+            return True, latency, None
+        except socket.timeout:
+            return False, None, "Connection timed out"
+        except socket.gaierror as e:
+            return False, None, f"Name resolution failed: {e}"
+        except ConnectionRefusedError:
+            return False, None, "Connection refused"
+        except OSError as e:
+            return False, None, str(e)
+
+
 class WakeOnLanService:
     """Service for Wake On LAN operations."""
 
