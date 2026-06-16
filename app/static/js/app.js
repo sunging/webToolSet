@@ -196,31 +196,31 @@ const PingTool = {
             if (ok && data.delay !== null && data.delay !== undefined) {
                 showResult('ping-result', `
                     <div class="result-item">
-                        <span class="result-label">目标地址</span>
-                        <span class="result-value">${address || '本机 IP'}</span>
+                        <span class="result-label">Target Address</span>
+                        <span class="result-value">${address || 'Local IP'}</span>
                     </div>
                     <div class="result-item">
-                        <span class="result-label">平均延迟</span>
+                        <span class="result-label">Average Latency</span>
                         <span class="result-value success">${formatDelay(data.delay)}</span>
                     </div>
                 `);
-                Toast.show('Ping 成功！', 'success');
+                Toast.show('Ping successful!', 'success');
             } else {
-                const errorMsg = data.error || '未知错误';
+                const errorMsg = data.error || 'Unknown error';
                 showResult('ping-result', `
                     <div class="result-error">
-                        <strong>错误:</strong> ${escapeHtml(errorMsg)}
+                        <strong>Error:</strong> ${escapeHtml(errorMsg)}
                     </div>
                 `);
-                Toast.show('Ping 失败', 'error');
+                Toast.show('Ping failed', 'error');
             }
         } catch (error) {
             showResult('ping-result', `
                 <div class="result-error">
-                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                    <strong>Request failed:</strong> ${escapeHtml(error.message)}
                 </div>
             `);
-            Toast.show('请求失败', 'error');
+            Toast.show('Request failed', 'error');
         } finally {
             setButtonLoading(form, false);
         }
@@ -241,7 +241,7 @@ const TcpPingTool = {
         const timeout = parseInt(form.timeout.value) || 2;
 
         if (!address) {
-            Toast.show('请输入目标地址', 'warning');
+            Toast.show('Please enter a target address', 'warning');
             return;
         }
 
@@ -254,35 +254,35 @@ const TcpPingTool = {
             if (ok && data.delay !== null && data.delay !== undefined) {
                 showResult('tcping-result', `
                     <div class="result-item">
-                        <span class="result-label">目标地址</span>
+                        <span class="result-label">Target Address</span>
                         <span class="result-value">${escapeHtml(address)}</span>
                     </div>
                     <div class="result-item">
-                        <span class="result-label">端口</span>
+                        <span class="result-label">Port</span>
                         <span class="result-value">${port}</span>
                     </div>
                     <div class="result-item">
-                        <span class="result-label">平均延迟</span>
+                        <span class="result-label">Average Latency</span>
                         <span class="result-value success">${formatDelay(data.delay)}</span>
                     </div>
                 `);
-                Toast.show('TCP Ping 成功！', 'success');
+                Toast.show('TCP Ping successful!', 'success');
             } else {
-                const errorMsg = data.error || '未知错误';
+                const errorMsg = data.error || 'Unknown error';
                 showResult('tcping-result', `
                     <div class="result-error">
-                        <strong>错误:</strong> ${escapeHtml(errorMsg)}
+                        <strong>Error:</strong> ${escapeHtml(errorMsg)}
                     </div>
                 `);
-                Toast.show('TCP Ping 失败', 'error');
+                Toast.show('TCP Ping failed', 'error');
             }
         } catch (error) {
             showResult('tcping-result', `
                 <div class="result-error">
-                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                    <strong>Request failed:</strong> ${escapeHtml(error.message)}
                 </div>
             `);
-            Toast.show('请求失败', 'error');
+            Toast.show('Request failed', 'error');
         } finally {
             setButtonLoading(form, false);
         }
@@ -301,7 +301,7 @@ const NslookupTool = {
         const address = form.address.value.trim();
 
         if (!address) {
-            Toast.show('请输入目标地址或域名', 'warning');
+            Toast.show('Please enter a target address or domain', 'warning');
             return;
         }
 
@@ -314,14 +314,14 @@ const NslookupTool = {
             if (ok && data.addresses && data.addresses.length > 0) {
                 let rows = `
                     <div class="result-item">
-                        <span class="result-label">查询名称</span>
+                        <span class="result-label">Query Name</span>
                         <span class="result-value">${escapeHtml(data.name)}</span>
                     </div>
                 `;
                 if (data.server) {
                     rows += `
                     <div class="result-item">
-                        <span class="result-label">DNS 服务器</span>
+                        <span class="result-label">DNS Server</span>
                         <span class="result-value">${escapeHtml(data.server)}</span>
                     </div>
                     `;
@@ -329,35 +329,35 @@ const NslookupTool = {
                 if (data.canonical_name) {
                     rows += `
                     <div class="result-item">
-                        <span class="result-label">规范名称</span>
+                        <span class="result-label">Canonical Name</span>
                         <span class="result-value">${escapeHtml(data.canonical_name)}</span>
                     </div>
                     `;
                 }
                 rows += data.addresses.map(addr => `
                     <div class="result-item">
-                        <span class="result-label">解析结果</span>
+                        <span class="result-label">Resolved</span>
                         <span class="result-value success">${escapeHtml(addr)}</span>
                     </div>
                 `).join('');
                 showResult('nslookup-result', rows);
-                Toast.show('解析成功！', 'success');
+                Toast.show('Resolved successfully!', 'success');
             } else {
-                const errorMsg = data.error || '未找到记录';
+                const errorMsg = data.error || 'No records found';
                 showResult('nslookup-result', `
                     <div class="result-error">
-                        <strong>错误:</strong> ${escapeHtml(errorMsg)}
+                        <strong>Error:</strong> ${escapeHtml(errorMsg)}
                     </div>
                 `);
-                Toast.show('解析失败', 'error');
+                Toast.show('Resolution failed', 'error');
             }
         } catch (error) {
             showResult('nslookup-result', `
                 <div class="result-error">
-                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                    <strong>Request failed:</strong> ${escapeHtml(error.message)}
                 </div>
             `);
-            Toast.show('请求失败', 'error');
+            Toast.show('Request failed', 'error');
         } finally {
             setButtonLoading(form, false);
         }
@@ -377,7 +377,7 @@ const DigTool = {
         const type = form.type.value;
 
         if (!address) {
-            Toast.show('请输入域名', 'warning');
+            Toast.show('Please enter a domain', 'warning');
             return;
         }
 
@@ -390,14 +390,14 @@ const DigTool = {
             if (ok && data.records && data.records.length > 0) {
                 let rows = `
                     <div class="result-item">
-                        <span class="result-label">查询名称</span>
+                        <span class="result-label">Query Name</span>
                         <span class="result-value">${escapeHtml(data.name)} (${escapeHtml(data.record_type)})</span>
                     </div>
                 `;
                 if (data.server) {
                     rows += `
                     <div class="result-item">
-                        <span class="result-label">DNS 服务器</span>
+                        <span class="result-label">DNS Server</span>
                         <span class="result-value">${escapeHtml(data.server)}</span>
                     </div>
                     `;
@@ -411,29 +411,29 @@ const DigTool = {
                 if (data.query_time !== null && data.query_time !== undefined) {
                     rows += `
                     <div class="result-item">
-                        <span class="result-label">查询耗时</span>
+                        <span class="result-label">Query Time</span>
                         <span class="result-value">${data.query_time.toFixed(2)} ms</span>
                     </div>
                     `;
                 }
                 showResult('dig-result', rows);
-                Toast.show('查询成功！', 'success');
+                Toast.show('Query successful!', 'success');
             } else {
-                const errorMsg = data.error || '未找到记录';
+                const errorMsg = data.error || 'No records found';
                 showResult('dig-result', `
                     <div class="result-error">
-                        <strong>错误:</strong> ${escapeHtml(errorMsg)}
+                        <strong>Error:</strong> ${escapeHtml(errorMsg)}
                     </div>
                 `);
-                Toast.show('查询失败', 'error');
+                Toast.show('Query failed', 'error');
             }
         } catch (error) {
             showResult('dig-result', `
                 <div class="result-error">
-                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                    <strong>Request failed:</strong> ${escapeHtml(error.message)}
                 </div>
             `);
-            Toast.show('请求失败', 'error');
+            Toast.show('Request failed', 'error');
         } finally {
             setButtonLoading(form, false);
         }
@@ -454,7 +454,7 @@ const TracerouteTool = {
         const timeout = parseInt(form.timeout.value) || 2;
 
         if (!address) {
-            Toast.show('请输入目标地址或域名', 'warning');
+            Toast.show('Please enter a target address or domain', 'warning');
             return;
         }
 
@@ -467,7 +467,7 @@ const TracerouteTool = {
             if (ok && data.hops && data.hops.length > 0) {
                 let rows = `
                     <div class="result-item">
-                        <span class="result-label">目标地址</span>
+                        <span class="result-label">Target Address</span>
                         <span class="result-value">${escapeHtml(data.address)}</span>
                     </div>
                 `;
@@ -478,29 +478,29 @@ const TracerouteTool = {
                         : '* * *';
                     return `
                     <div class="result-item">
-                        <span class="result-label">第 ${hop.distance} 跳 · ${escapeHtml(addr)}</span>
+                        <span class="result-label">Hop ${hop.distance} · ${escapeHtml(addr)}</span>
                         <span class="result-value ${hop.is_alive ? 'success' : ''}">${escapeHtml(rtt)}</span>
                     </div>
                     `;
                 }).join('');
                 showResult('traceroute-result', rows);
-                Toast.show('路由追踪完成！', 'success');
+                Toast.show('Traceroute complete!', 'success');
             } else {
-                const errorMsg = data.error || '追踪失败';
+                const errorMsg = data.error || 'Trace failed';
                 showResult('traceroute-result', `
                     <div class="result-error">
-                        <strong>错误:</strong> ${escapeHtml(errorMsg)}
+                        <strong>Error:</strong> ${escapeHtml(errorMsg)}
                     </div>
                 `);
-                Toast.show('追踪失败', 'error');
+                Toast.show('Trace failed', 'error');
             }
         } catch (error) {
             showResult('traceroute-result', `
                 <div class="result-error">
-                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                    <strong>Request failed:</strong> ${escapeHtml(error.message)}
                 </div>
             `);
-            Toast.show('请求失败', 'error');
+            Toast.show('Request failed', 'error');
         } finally {
             setButtonLoading(form, false);
         }
@@ -519,7 +519,7 @@ const WhoisTool = {
         const query = form.query.value.trim();
 
         if (!query) {
-            Toast.show('请输入域名或 IP 地址', 'warning');
+            Toast.show('Please enter a domain or IP address', 'warning');
             return;
         }
 
@@ -532,37 +532,37 @@ const WhoisTool = {
             if (ok && data.raw) {
                 let rows = `
                     <div class="result-item">
-                        <span class="result-label">查询对象</span>
+                        <span class="result-label">Query</span>
                         <span class="result-value">${escapeHtml(data.query)}</span>
                     </div>
                 `;
                 if (data.server) {
                     rows += `
                     <div class="result-item">
-                        <span class="result-label">WHOIS 服务器</span>
+                        <span class="result-label">WHOIS Server</span>
                         <span class="result-value">${escapeHtml(data.server)}</span>
                     </div>
                     `;
                 }
                 rows += `<pre class="result-pre">${escapeHtml(data.raw)}</pre>`;
                 showResult('whois-result', rows);
-                Toast.show('查询成功！', 'success');
+                Toast.show('Query successful!', 'success');
             } else {
-                const errorMsg = data.error || '未找到记录';
+                const errorMsg = data.error || 'No records found';
                 showResult('whois-result', `
                     <div class="result-error">
-                        <strong>错误:</strong> ${escapeHtml(errorMsg)}
+                        <strong>Error:</strong> ${escapeHtml(errorMsg)}
                     </div>
                 `);
-                Toast.show('查询失败', 'error');
+                Toast.show('Query failed', 'error');
             }
         } catch (error) {
             showResult('whois-result', `
                 <div class="result-error">
-                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                    <strong>Request failed:</strong> ${escapeHtml(error.message)}
                 </div>
             `);
-            Toast.show('请求失败', 'error');
+            Toast.show('Request failed', 'error');
         } finally {
             setButtonLoading(form, false);
         }
@@ -599,7 +599,7 @@ const WakeOnLanTool = {
         // Validate MAC address
         const macPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
         if (!macPattern.test(macAddress)) {
-            Toast.show('请输入有效的 MAC 地址', 'warning');
+            Toast.show('Please enter a valid MAC address', 'warning');
             return;
         }
 
@@ -615,31 +615,31 @@ const WakeOnLanTool = {
             if (ok && data.rst === 'success') {
                 showResult('wol-result', `
                     <div class="result-item">
-                        <span class="result-label">MAC 地址</span>
+                        <span class="result-label">MAC Address</span>
                         <span class="result-value">${escapeHtml(macAddress)}</span>
                     </div>
                     <div class="result-item">
-                        <span class="result-label">状态</span>
-                        <span class="result-value success">唤醒包已发送</span>
+                        <span class="result-label">Status</span>
+                        <span class="result-value success">Magic packet sent</span>
                     </div>
                 `);
-                Toast.show('唤醒包已发送！', 'success');
+                Toast.show('Magic packet sent!', 'success');
             } else {
-                const errorMsg = data.error || '发送失败';
+                const errorMsg = data.error || 'Send failed';
                 showResult('wol-result', `
                     <div class="result-error">
-                        <strong>错误:</strong> ${escapeHtml(errorMsg)}
+                        <strong>Error:</strong> ${escapeHtml(errorMsg)}
                     </div>
                 `);
-                Toast.show('发送失败', 'error');
+                Toast.show('Send failed', 'error');
             }
         } catch (error) {
             showResult('wol-result', `
                 <div class="result-error">
-                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                    <strong>Request failed:</strong> ${escapeHtml(error.message)}
                 </div>
             `);
-            Toast.show('请求失败', 'error');
+            Toast.show('Request failed', 'error');
         } finally {
             setButtonLoading(form, false);
         }
@@ -660,7 +660,7 @@ const PortCheckTool = {
         const timeout = parseFloat(form.timeout.value) || 3;
 
         if (!address) {
-            Toast.show('请输入目标地址', 'warning');
+            Toast.show('Please enter a target address', 'warning');
             return;
         }
 
@@ -671,26 +671,26 @@ const PortCheckTool = {
             const { ok, status, data } = await API.portCheck(address, port, timeout);
 
             const statusClass = data.open ? 'success' : 'error';
-            const statusText = data.open ? '开放' : '关闭';
+            const statusText = data.open ? 'Open' : 'Closed';
 
             let rows = `
                 <div class="result-item">
-                    <span class="result-label">目标地址</span>
+                    <span class="result-label">Target Address</span>
                     <span class="result-value">${escapeHtml(data.address)}</span>
                 </div>
                 <div class="result-item">
-                    <span class="result-label">端口</span>
+                    <span class="result-label">Port</span>
                     <span class="result-value">${data.port}</span>
                 </div>
                 <div class="result-item">
-                    <span class="result-label">状态</span>
+                    <span class="result-label">Status</span>
                     <span class="result-value ${statusClass}">${statusText}</span>
                 </div>
             `;
             if (data.open && data.latency !== null && data.latency !== undefined) {
                 rows += `
                 <div class="result-item">
-                    <span class="result-label">连接延迟</span>
+                    <span class="result-label">Latency</span>
                     <span class="result-value success">${formatDelay(data.latency)}</span>
                 </div>
                 `;
@@ -698,20 +698,20 @@ const PortCheckTool = {
             if (data.error) {
                 rows += `
                 <div class="result-item">
-                    <span class="result-label">详情</span>
+                    <span class="result-label">Details</span>
                     <span class="result-value">${escapeHtml(data.error)}</span>
                 </div>
                 `;
             }
             showResult('portcheck-result', rows);
-            Toast.show(data.open ? '端口开放！' : '端口未开放', data.open ? 'success' : 'warning');
+            Toast.show(data.open ? 'Port is open!' : 'Port is closed', data.open ? 'success' : 'warning');
         } catch (error) {
             showResult('portcheck-result', `
                 <div class="result-error">
-                    <strong>请求失败:</strong> ${escapeHtml(error.message)}
+                    <strong>Request failed:</strong> ${escapeHtml(error.message)}
                 </div>
             `);
-            Toast.show('请求失败', 'error');
+            Toast.show('Request failed', 'error');
         } finally {
             setButtonLoading(form, false);
         }
@@ -728,10 +728,10 @@ async function loadMyIp() {
         if (ok && data.ip) {
             ipElement.textContent = data.ip;
         } else {
-            ipElement.textContent = '获取失败';
+            ipElement.textContent = 'Failed to load';
         }
     } catch (error) {
-        ipElement.textContent = '获取失败';
+        ipElement.textContent = 'Failed to load';
     }
 }
 
