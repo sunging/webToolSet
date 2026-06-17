@@ -2,13 +2,14 @@
 
 import pytest
 from fastapi.testclient import TestClient
+import importlib
 import sys
 import os
 
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.main import app
+from app.main import app  # noqa: E402
 
 client = TestClient(app)
 
@@ -38,6 +39,37 @@ class TestHealthEndpoint:
         data = response.json()
         assert data["status"] == "healthy"
         assert data["service"] == "webToolSet"
+
+
+class TestRateLimiting:
+    """Tests for global rate limiting."""
+
+    def test_rate_limit_per_minute_env_override(self, monkeypatch):
+        """Test rate limit config can be overridden by environment variable."""
+        monkeypatch.setenv("RATE_LIMIT_PER_MINUTE", "7")
+
+        import app.config as config
+
+        try:
+            reloaded_config = importlib.reload(config)
+            assert reloaded_config.RATE_LIMIT_PER_MINUTE == 7
+        finally:
+            monkeypatch.delenv("RATE_LIMIT_PER_MINUTE", raising=False)
+            importlib.reload(config)
+
+    def test_default_rate_limit_returns_429(self):
+        """Test the default rate limit is enforced by the application."""
+        rate_limit_client = TestClient(app, client=("rate-limit-test", 50000))
+
+        try:
+            for _ in range(60):
+                response = rate_limit_client.get("/api/health")
+                assert response.status_code == 200
+
+            response = rate_limit_client.get("/api/health")
+            assert response.status_code == 429
+        finally:
+            app.state.limiter.limiter.storage.reset()
 
 
 class TestMyIpEndpoint:

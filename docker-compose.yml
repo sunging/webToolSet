@@ -11,6 +11,7 @@ services:
       - ./log:/app/log
     environment:
       - TZ=Asia/Shanghai
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-60}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/api/health"]

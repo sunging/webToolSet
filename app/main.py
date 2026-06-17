@@ -10,7 +10,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 import uvicorn
 
@@ -21,6 +20,7 @@ from app.config import (
     APP_VERSION,
     BASE_DIR,
     LOG_CONFIG_FILE,
+    RATE_LIMIT_PER_MINUTE,
     STATIC_DIR,
     TEMPLATES_DIR,
 )
@@ -29,7 +29,22 @@ from app.config import (
 logger = logging.getLogger(__name__)
 
 # Rate limiter
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(
+    key_func=get_remote_address,
+    application_limits=[f"{RATE_LIMIT_PER_MINUTE}/minute"],
+)
+
+
+def rate_limit_response() -> HTMLResponse:
+    """Return the standard rate limit response."""
+    return HTMLResponse(
+        content="<html><body><h1>429 - Too Many Requests</h1><p>Please try again later.</p></body></html>",
+        status_code=429,
+    )
+
+
+def global_rate_limit_endpoint():
+    """Synthetic endpoint used for application-wide rate limiting."""
 
 
 @asynccontextmanager
@@ -50,9 +65,18 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Add rate limiting
 app.state.limiter = limiter
-app.add_middleware(SlowAPIMiddleware)
+
+
+@app.middleware("http")
+async def global_rate_limit_middleware(request: Request, call_next):
+    """Apply application-wide rate limiting to every HTTP request."""
+    try:
+        limiter._check_request_limit(request, global_rate_limit_endpoint, True)
+    except RateLimitExceeded:
+        return rate_limit_response()
+
+    return await call_next(request)
 
 # CORS middleware
 app.add_middleware(
@@ -78,10 +102,7 @@ app.include_router(network_router)
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     """Handle rate limit exceeded errors."""
-    return HTMLResponse(
-        content="<html><body><h1>429 - Too Many Requests</h1><p>Please try again later.</p></body></html>",
-        status_code=429,
-    )
+    return rate_limit_response()
 
 
 # Root endpoint - serve frontend
