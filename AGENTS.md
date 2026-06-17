@@ -29,6 +29,12 @@ Lint config is in `.flake8` (max line length 127, max complexity 10). CI
 (`.github/workflows/python-app.yml`) fails the build only on syntax/undefined-name
 errors (`E9,F63,F7,F82`); other flake8 findings are warnings.
 
+## Git
+
+Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/),
+for example `feat: enable configurable rate limiting` or
+`fix: handle invalid DNS responses`.
+
 ## Architecture
 
 Strict three-layer separation — keep these boundaries when adding tools:
