@@ -1,240 +1,286 @@
 # Web Tool Set
 
-A modern network diagnostic toolkit built with FastAPI, featuring ICMP Ping, TCP Ping, Wake On LAN, and more with a beautiful web interface.
+Web Tool Set is a FastAPI application that exposes common network diagnostic
+tools through a JSON API and a single-page web interface.
 
-![Python](https://img.shields.io/badge/Python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115.6-green)
-![License](https://img.shields.io/badge/License-GPL%20v3-blue)
+It includes ICMP ping, TCP ping, DNS lookups, reverse DNS, DNS record queries,
+traceroute, WHOIS, TCP port checks, Wake-On-LAN, and client IP detection.
 
-## ✨ Features
+## Features
 
-- 🔍 **ICMP Ping** - Test host reachability and network latency
-- 🌐 **TCP Ping** - Test TCP port connectivity and response time
-- 🔎 **NSLookup** - Resolve hostnames to addresses (and reverse PTR lookups)
-- 📇 **Dig** - Query specific DNS record types (A, AAAA, MX, NS, TXT, ...)
-- 🗺️ **Traceroute** - Trace the network path to a host
-- 📜 **Whois** - Look up registration info for domains and IPs
-- 💻 **Wake On LAN** - Remote wake up network devices
-- 📋 **IP Query** - Get client's real IP address
-- 🎨 **Modern Frontend** - Responsive UI with auto light/dark theme
-- 🛡️ **Security** - Built-in rate limiting to prevent abuse
-- 🐳 **Docker Support** - Ready-to-use containerized deployment
+- Web UI served from `/`
+- JSON API under `/api`
+- ICMP ping and TCP ping
+- DNS `nslookup`, reverse PTR lookup, and `dig`-style record queries
+- Traceroute with configurable hop and timeout limits
+- WHOIS lookup for domains and IP addresses
+- TCP port availability checks
+- Wake-On-LAN magic packet support
+- Client IP detection with proxy header support
+- Global request rate limiting
+- Docker and uv-based local development workflows
 
-## 🚀 Quick Start
+## Requirements
 
-### Prerequisites
+- Python 3.11 or newer
+- [uv](https://docs.astral.sh/uv/) for dependency and environment management
+- Elevated privileges for ICMP ping and traceroute in some environments
 
-- Python 3.11+
-- [uv](https://docs.astral.sh/uv/) - Fast Python package manager
+The Docker image uses Python 3.12.
 
-### Install uv
+## Quick Start
 
-```bash
-# macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Windows (PowerShell)
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-### Option 1: Run Directly
+Install dependencies:
 
 ```bash
-# Clone the repository
-git clone https://github.com/sunging/webToolSet.git
-cd webToolSet
-
-# Install dependencies
 uv sync
-
-# Run the application
-uv run python -m app.main
-
-# Or use uvicorn
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-### Option 2: Docker Deployment
+Run the app:
 
 ```bash
-# Using docker-compose
-docker-compose up -d
+uv run python -m app.main
+```
 
-# Or build manually
+Open:
+
+```text
+http://localhost:8000
+```
+
+For autoreload during development:
+
+```bash
+uv run uvicorn app.main:app --reload
+```
+
+## Development
+
+Install runtime and development dependencies:
+
+```bash
+uv sync --extra dev
+```
+
+Run tests:
+
+```bash
+uv run pytest tests/ -v
+```
+
+Run a single test class:
+
+```bash
+uv run pytest tests/test_main.py::TestPingEndpoint -v
+```
+
+Run a single test:
+
+```bash
+uv run pytest tests/test_main.py::TestPingEndpoint::test_ping_localhost -v
+```
+
+Run lint:
+
+```bash
+uv run flake8 app/ tests/
+```
+
+Add dependencies:
+
+```bash
+uv add package-name
+uv add --dev package-name
+```
+
+## Docker
+
+Run with Compose:
+
+```bash
+docker-compose up -d
+```
+
+Build and run manually:
+
+```bash
 docker build -t webtoolset .
 docker run -d -p 8000:80 webtoolset
 ```
 
-Visit http://localhost:8000 to use the application.
+The container listens on port 80. The Compose file maps host port 8000 to the
+container.
 
-### Development Mode
+## API Documentation
 
-```bash
-# Install dev dependencies
-uv sync --extra dev
+When the application is running, FastAPI serves interactive API documentation at:
 
-# Run tests
-uv run pytest tests/ -v
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
-# Code linting
-uv run flake8 app/ tests/
-```
-
-## 📖 API Documentation
-
-After starting the server, visit:
-
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-### API Endpoints
+## API Endpoints
 
 | Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Frontend page |
+| --- | --- | --- |
 | `/api/health` | GET | Health check |
-| `/api/ping` | GET | Ping client IP |
-| `/api/ping/{address}` | GET | Ping specified address |
-| `/api/tcping` | GET | TCP Ping client IP |
-| `/api/tcping/{address}` | GET | TCP Ping specified address |
-| `/api/nslookup/{address}` | GET | Resolve hostname/IP via DNS |
-| `/api/dig/{address}` | GET | Query DNS records (`?type=A`) |
-| `/api/traceroute/{address}` | GET | Trace network path to host |
-| `/api/whois/{query}` | GET | WHOIS lookup for domain/IP |
-| `/api/myip` | GET | Get client IP |
-| `/api/wol/{mac_addr}` | GET | Send wake packet |
+| `/api/ping` | GET | ICMP ping the detected client IP |
+| `/api/ping/{address}` | GET | ICMP ping an address or hostname |
+| `/api/tcping` | GET | TCP ping the detected client IP |
+| `/api/tcping/{address}` | GET | TCP ping an address or hostname |
+| `/api/nslookup/{address}` | GET | Resolve A/AAAA records for a name |
+| `/api/dig/{address}` | GET | Query DNS records |
+| `/api/reverse-ip` | GET | Reverse lookup the detected client IP |
+| `/api/reverse-ip/{address}` | GET | Reverse lookup an IP address |
+| `/api/traceroute/{address}` | GET | Trace the network path to a host |
+| `/api/whois/{query}` | GET | WHOIS lookup for a domain or IP |
+| `/api/myip` | GET | Return the detected client IP |
+| `/api/port/{address}/{port}` | GET | Check whether a TCP port is open |
+| `/api/wol/{mac_addr}` | GET | Send a Wake-On-LAN magic packet |
 
-### Example Requests
+Legacy unprefixed endpoints are kept for backward compatibility:
+
+- `/ping`
+- `/ping/{address}`
+- `/tcping`
+- `/tcping/{address}`
+- `/myip`
+- `/wol/{mac_addr}`
+
+## Example Requests
 
 ```bash
-# Ping test
+# Ping
 curl http://localhost:8000/api/ping/8.8.8.8
 
-# TCP Ping test
+# TCP ping
 curl "http://localhost:8000/api/tcping/8.8.8.8?port=53&timeout=3"
 
 # DNS lookup
 curl http://localhost:8000/api/nslookup/example.com
 
-# DNS record query (dig)
+# DNS record query
 curl "http://localhost:8000/api/dig/example.com?type=MX"
 
+# Reverse DNS lookup
+curl http://localhost:8000/api/reverse-ip/8.8.8.8
+
 # Traceroute
-curl "http://localhost:8000/api/traceroute/8.8.8.8?max_hops=20"
+curl "http://localhost:8000/api/traceroute/8.8.8.8?max_hops=20&timeout=2"
 
-# Whois lookup
-curl http://localhost:8000/api/whois/example.com
+# WHOIS lookup
+curl "http://localhost:8000/api/whois/example.com?timeout=5"
 
-# Get IP
+# Client IP
 curl http://localhost:8000/api/myip
 
-# Wake On LAN
+# TCP port check
+curl "http://localhost:8000/api/port/127.0.0.1/8000?timeout=1"
+
+# Wake-On-LAN
 curl http://localhost:8000/api/wol/AA:BB:CC:DD:EE:FF
 ```
 
-## 📁 Project Structure
+## Query Parameters
 
-```
-webToolSet/
-├── app/
-│   ├── api/                 # API routes
-│   │   └── network.py       # Network tools routes
-│   ├── models/              # Data models
-│   │   └── responses.py     # Response models
-│   ├── services/            # Business logic
-│   │   └── network.py       # Network services
-│   ├── static/              # Static files
-│   │   ├── css/
-│   │   ├── img/
-│   │   └── js/
-│   ├── templates/           # HTML templates
-│   │   └── index.html
-│   ├── utils/               # Utility functions
-│   │   ├── iputils.py       # IP utilities
-│   │   └── tcping.py        # TCP Ping implementation
-│   ├── config.py            # Configuration
-│   ├── logging.yml          # Logging config
-│   └── main.py              # Application entry
-├── tests/                   # Test files
-│   └── test_main.py
-├── log/                     # Log directory
-├── Dockerfile
-├── docker-compose.yml
-└── pyproject.toml
-```
+| Endpoint | Parameter | Range / Default | Description |
+| --- | --- | --- | --- |
+| `/api/tcping/{address}` | `port` | 1-65535, default 80 | TCP port to connect to |
+| `/api/tcping/{address}` | `timeout` | 1-30, default 2 | Connection timeout in seconds |
+| `/api/dig/{address}` | `type` | default `A` | DNS record type, such as `A`, `AAAA`, `MX`, `TXT`, `CNAME`, or `NS` |
+| `/api/traceroute/{address}` | `max_hops` | 1-64, default 30 | Maximum hop count |
+| `/api/traceroute/{address}` | `timeout` | 1-30, default 2 | Per-hop timeout in seconds |
+| `/api/whois/{query}` | `timeout` | 1-30, default 5 | WHOIS connection timeout in seconds |
+| `/api/port/{address}/{port}` | `timeout` | 0.1-30.0, default 2.0 | TCP connection timeout in seconds |
 
-## ⚙️ Configuration
+## Configuration
 
-### Environment Variables
+Configuration is read from environment variables.
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `TZ` | Timezone | `Asia/Shanghai` |
+| Variable | Default | Description |
+| --- | --- | --- |
+| `RATE_LIMIT_PER_MINUTE` | `60` | Global request limit per client per minute |
 
-### Logging
-
-Logging configuration is in `app/logging.yml`:
-
-- Console output: INFO level
-- File output: `log/app.log`, max 10MB, 5 backups
-
-## 🔧 Development
-
-### Install Dev Dependencies
+Example:
 
 ```bash
-uv sync --extra dev
+RATE_LIMIT_PER_MINUTE=120 uv run python -m app.main
 ```
 
-### Run Tests
+On Windows PowerShell:
 
-```bash
-uv run pytest tests/ -v
+```powershell
+$env:RATE_LIMIT_PER_MINUTE = "120"
+uv run python -m app.main
 ```
 
-### Code Linting
+## Project Structure
 
-```bash
-uv run flake8 app/ tests/
+```text
+app/
+  api/
+    network.py          API route handlers under /api
+  models/
+    responses.py        Pydantic response models
+  services/
+    network.py          Network tool business logic
+  static/
+    css/
+    img/
+    js/
+  templates/
+    index.html          Single-page frontend
+  utils/
+    iputils.py          Client IP detection
+    tcping.py           TCP ping helper
+  config.py             Paths and app constants
+  main.py               FastAPI app, middleware, frontend, legacy routes
+tests/
+  test_main.py
 ```
 
-### Add New Dependencies
+## Architecture
 
-```bash
-# Add runtime dependency
-uv add package-name
+The application keeps a strict three-layer separation:
 
-# Add dev dependency
-uv add --dev package-name
-```
+- `app/api/network.py` contains thin route handlers. Handlers validate request
+  parameters, call a service, and translate service error strings into HTTP
+  status codes.
+- `app/services/network.py` contains network and business logic. Service methods
+  return result/error tuples and do not raise application errors to callers.
+- `app/models/responses.py` contains Pydantic response models used by route
+  `response_model` declarations.
 
-## 🤝 Contributing
+Supporting modules:
 
-Contributions are welcome! Please follow these steps:
+- `app/main.py` creates the FastAPI app, configures CORS and rate limiting,
+  serves static/templates, and keeps legacy unprefixed endpoints.
+- `app/config.py` centralizes paths and constants.
+- `app/utils/iputils.py` detects the real client IP using `X-Real-IP` and
+  `X-Forwarded-For` headers when present.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## Adding a Network Tool
 
-## 📝 Changelog
+1. Add a service class or method in `app/services/network.py`.
+2. Return `(result, error)` from service methods, or the existing tuple shape for
+   related tools.
+3. Add a response model in `app/models/responses.py`.
+4. Add a thin route in `app/api/network.py`.
+5. Map service error strings to HTTP status codes in the route.
+6. Wire the tool into `app/templates/index.html` and `app/static/js/app.js` if it
+   should appear in the web UI.
+7. Add focused tests in `tests/test_main.py`.
 
-### v1.0.0
+## Notes
 
-- ✨ New modern frontend UI
-- 🔧 Refactored project architecture (API/Service/Model separation)
-- 🛡️ Added rate limiting and CORS configuration
-- 🐳 Improved Docker configuration
-- ✅ Enhanced test coverage
-- 📚 Updated documentation
+- ICMP ping and traceroute use raw sockets through `icmplib`; they may require
+  elevated privileges or fail in restricted containers and CI environments.
+- Tests that depend on ICMP availability skip gracefully when raw socket support
+  is unavailable.
+- The app is designed to run behind a proxy. The Dockerfile starts uvicorn with
+  proxy header support.
+- CI treats syntax and undefined-name flake8 errors as build failures; other
+  flake8 findings are reported as warnings.
 
-## 📄 License
+## License
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
-- [icmplib](https://github.com/ValentinBELYN/icmplib) - ICMP protocol implementation
-- [wakeonlan](https://github.com/remcohaszing/pywakeonlan) - Wake On LAN implementation
+This project is licensed under GPL-3.0-or-later. See [LICENSE](LICENSE).
