@@ -62,6 +62,7 @@
             <button class="tab-btn" data-tab="tcping">TCP Ping</button>
             <button class="tab-btn" data-tab="nslookup">NSLookup</button>
             <button class="tab-btn" data-tab="dig">Dig</button>
+            <button class="tab-btn" data-tab="reverseip">Reverse IP</button>
             <button class="tab-btn" data-tab="traceroute">Traceroute</button>
             <button class="tab-btn" data-tab="whois">Whois</button>
             <button class="tab-btn" data-tab="portcheck">Port Check</button>
@@ -238,6 +239,44 @@
                 </form>
 
                 <div id="dig-result" class="result-container hidden">
+                    <h4>Result</h4>
+                    <div class="result-content"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reverse IP -->
+        <section id="reverseip-tab" class="tab-content">
+            <div class="card">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"/>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                        <polyline points="7 23 3 19 7 15"/>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                    </svg>
+                    Reverse IP
+                </h2>
+                <p class="description">Resolve an IP address to its hostname (PTR record)</p>
+
+                <form id="reverseip-form" class="tool-form">
+                    <div class="form-group">
+                        <label for="reverseip-address">IP Address</label>
+                        <input type="text" id="reverseip-address" name="address"
+                               placeholder="Enter an IP address (leave empty to look up your own IP)">
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span class="btn-text">Lookup</span>
+                        <span class="btn-loading hidden">
+                            <svg class="spinner" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"/>
+                            </svg>
+                            Processing...
+                        </span>
+                    </button>
+                </form>
+
+                <div id="reverseip-result" class="result-container hidden">
                     <h4>Result</h4>
                     <div class="result-content"></div>
                 </div>
