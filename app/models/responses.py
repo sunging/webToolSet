@@ -37,6 +37,17 @@ class NslookupResponse(BaseModel):
     error: str | None = Field(None, description="Error message if lookup failed")
 
 
+class ReverseIpResponse(BaseModel):
+    """Response model for reverse IP (PTR) lookup endpoint."""
+
+    address: str = Field(description="Queried IP address")
+    server: str | None = Field(None, description="DNS server used for the query")
+    hostnames: list[str] = Field(
+        default_factory=list, description="Resolved PTR hostnames"
+    )
+    error: str | None = Field(None, description="Error message if lookup failed")
+
+
 class DnsRecord(BaseModel):
     """A single DNS record."""
 

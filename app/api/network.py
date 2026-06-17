@@ -11,6 +11,7 @@ from app.models.responses import (
     NslookupResponse,
     PingResponse,
     PortCheckResponse,
+    ReverseIpResponse,
     TcpPingResponse,
     TracerouteResponse,
     WakeOnLanResponse,
@@ -20,6 +21,7 @@ from app.services.network import (
     DnsService,
     PingService,
     PortCheckService,
+    ReverseIpService,
     TcpPingService,
     TracerouteService,
     WakeOnLanService,
@@ -207,6 +209,62 @@ async def dig(
         server=result["server"],
         records=result["records"],
         query_time=result["query_time"],
+    )
+
+
+@router.get(
+    "/reverse-ip",
+    response_model=ReverseIpResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    },
+)
+@router.get(
+    "/reverse-ip/{address}",
+    response_model=ReverseIpResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    },
+)
+async def reverse_ip(
+    request: Request,
+    response: Response,
+    address: str | None = None,
+) -> ReverseIpResponse:
+    """
+    Perform a reverse DNS (PTR) lookup for an IP address.
+
+    Args:
+        request: The FastAPI request object.
+        response: The FastAPI response object.
+        address: The IP address to look up. If None, uses the client's IP.
+
+    Returns:
+        ReverseIpResponse with resolved hostnames or error message.
+
+    """
+    if not address:
+        address = get_real_ip(request) or "127.0.0.1"
+
+    result, error = ReverseIpService.reverse(address)
+
+    if error:
+        if "Invalid IP" in error:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+        elif "No PTR record" in error:
+            response.status_code = status.HTTP_404_NOT_FOUND
+        else:
+            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return ReverseIpResponse(address=address, error=error)
+
+    return ReverseIpResponse(
+        address=address,
+        server=result["server"],
+        hostnames=result["hostnames"],
     )
 
 

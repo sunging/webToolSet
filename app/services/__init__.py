@@ -3,6 +3,7 @@
 from app.services.network import (
     DnsService,
     PingService,
+    ReverseIpService,
     TcpPingService,
     TracerouteService,
     WakeOnLanService,
@@ -12,6 +13,7 @@ from app.services.network import (
 __all__ = [
     "DnsService",
     "PingService",
+    "ReverseIpService",
     "TcpPingService",
     "TracerouteService",
     "WakeOnLanService",
