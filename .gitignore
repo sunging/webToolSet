@@ -161,7 +161,3 @@ cython_debug/
 
 # vscode
 .vscode
-
-# uv
-.uv/
-uv.lock
