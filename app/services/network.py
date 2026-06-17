@@ -209,6 +209,57 @@ class DnsService:
         }, None
 
 
+class ReverseIpService:
+    """Service for reverse IP (PTR) lookups."""
+
+    @staticmethod
+    def reverse(address: str) -> tuple[dict | None, str | None]:
+        """
+        Perform a reverse DNS (PTR) lookup for an IP address.
+
+        Resolves an IPv4 or IPv6 address to the hostname(s) registered in its
+        PTR record(s).
+
+        Args:
+            address: The IP address to look up.
+
+        Returns:
+            A tuple of (result, error_message). result is a dict with keys
+            ``server`` and ``hostnames`` when successful.
+
+        """
+        address = address.strip()
+
+        try:
+            ipaddress.ip_address(address)
+        except ValueError:
+            return None, f"Invalid IP address: {address}"
+
+        resolver = dns.resolver.Resolver()
+        server = resolver.nameservers[0] if resolver.nameservers else None
+
+        try:
+            rev_name = dns.reversename.from_address(address)
+            answers = resolver.resolve(rev_name, "PTR")
+            hostnames = [str(r).rstrip(".") for r in answers]
+        except dns.resolver.NXDOMAIN:
+            return None, f"No PTR record found for {address}"
+        except dns.resolver.NoAnswer:
+            return None, f"No PTR record found for {address}"
+        except dns.resolver.NoNameservers:
+            return None, "No nameservers could answer the query"
+        except dns.exception.Timeout:
+            return None, "DNS query timed out"
+        except Exception as e:
+            logger.debug(f"reverse lookup error: {e}")
+            return None, f"Reverse lookup failed: {e}"
+
+        if not hostnames:
+            return None, f"No PTR record found for {address}"
+
+        return {"server": server, "hostnames": hostnames}, None
+
+
 class TracerouteService:
     """Service for traceroute operations."""
 

@@ -113,6 +113,11 @@ const API = {
         return this.get(`/dig/${encodeURIComponent(address)}` + (queryString ? `?${queryString}` : ''));
     },
 
+    async reverseIp(address = '') {
+        const url = address ? `/reverse-ip/${encodeURIComponent(address)}` : '/reverse-ip';
+        return this.get(url);
+    },
+
     async traceroute(address, maxHops = 30, timeout = 2) {
         const params = new URLSearchParams();
         if (maxHops !== 30) params.set('max_hops', maxHops);
@@ -440,6 +445,68 @@ const DigTool = {
     }
 };
 
+const ReverseIpTool = {
+    init() {
+        const form = document.getElementById('reverseip-form');
+        form?.addEventListener('submit', (e) => this.handleSubmit(e));
+    },
+
+    async handleSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const address = form.address.value.trim();
+
+        setButtonLoading(form, true);
+        hideResult('reverseip-result');
+
+        try {
+            const { ok, data } = await API.reverseIp(address);
+
+            if (ok && data.hostnames && data.hostnames.length > 0) {
+                let rows = `
+                    <div class="result-item">
+                        <span class="result-label">IP Address</span>
+                        <span class="result-value">${escapeHtml(data.address)}</span>
+                    </div>
+                `;
+                if (data.server) {
+                    rows += `
+                    <div class="result-item">
+                        <span class="result-label">DNS Server</span>
+                        <span class="result-value">${escapeHtml(data.server)}</span>
+                    </div>
+                    `;
+                }
+                rows += data.hostnames.map(host => `
+                    <div class="result-item">
+                        <span class="result-label">Hostname</span>
+                        <span class="result-value success">${escapeHtml(host)}</span>
+                    </div>
+                `).join('');
+                showResult('reverseip-result', rows);
+                Toast.show('Lookup successful!', 'success');
+            } else {
+                const errorMsg = data.error || 'No PTR record found';
+                showResult('reverseip-result', `
+                    <div class="result-error">
+                        <strong>Error:</strong> ${escapeHtml(errorMsg)}
+                    </div>
+                `);
+                Toast.show('Lookup failed', 'error');
+            }
+        } catch (error) {
+            showResult('reverseip-result', `
+                <div class="result-error">
+                    <strong>Request failed:</strong> ${escapeHtml(error.message)}
+                </div>
+            `);
+            Toast.show('Request failed', 'error');
+        } finally {
+            setButtonLoading(form, false);
+        }
+    }
+};
+
 const TracerouteTool = {
     init() {
         const form = document.getElementById('traceroute-form');
@@ -750,6 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
     TcpPingTool.init();
     NslookupTool.init();
     DigTool.init();
+    ReverseIpTool.init();
     TracerouteTool.init();
     WhoisTool.init();
     WakeOnLanTool.init();

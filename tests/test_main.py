@@ -161,6 +161,39 @@ class TestDigEndpoint:
         assert response.status_code == 422
 
 
+class TestReverseIpEndpoint:
+    """Tests for the /api/reverse-ip endpoint."""
+
+    def test_reverse_ip_resolves(self):
+        """Test reverse lookup of a well-known IP (8.8.8.8)."""
+        response = client.get("/api/reverse-ip/8.8.8.8")
+        # May fail without network access, so accept error structure too.
+        assert response.status_code in [200, 404, 500]
+        data = response.json()
+        assert data["address"] == "8.8.8.8"
+        if response.status_code == 200:
+            assert len(data["hostnames"]) > 0
+        else:
+            assert data["error"] is not None
+
+    def test_reverse_ip_invalid_address(self):
+        """Test reverse lookup with an invalid IP returns a 400 error."""
+        response = client.get("/api/reverse-ip/not-an-ip")
+        assert response.status_code == 400
+        data = response.json()
+        assert data["error"] is not None
+
+    def test_reverse_ip_no_argument(self):
+        """Test reverse lookup falls back to the client IP when none is given."""
+        response = client.get("/api/reverse-ip")
+        # The client IP may or may not be a valid/resolvable address (the test
+        # client reports a non-IP host), so just check the response structure.
+        assert response.status_code in [200, 400, 404, 500]
+        data = response.json()
+        assert "address" in data
+        assert "hostnames" in data or data["error"] is not None
+
+
 class TestTracerouteEndpoint:
     """Tests for the /api/traceroute endpoint."""
 
