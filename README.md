@@ -3,18 +3,30 @@
 Web Tool Set is a FastAPI application that exposes common network diagnostic
 tools through a JSON API and a single-page web interface.
 
-It includes ICMP ping, TCP ping, DNS lookups, reverse DNS, DNS record queries,
-traceroute, WHOIS, TCP port checks, Wake-On-LAN, and client IP detection.
+It includes HTTP checks, request inspection, TLS certificate inspection, ICMP
+ping, TCP ping, DNS lookups, reverse DNS, DNS record queries, DNS resolver
+comparison, traceroute, MTR-style route quality analysis, WHOIS, TCP port
+checks and bounded port scans, subnet calculation, mail DNS health checks,
+Wake-On-LAN, and client IP detection.
 
 ## Features
 
 - Web UI served from `/`
 - JSON API under `/api`
+- HTTP/HTTPS status, redirect, timing, and header checks
+- Header / Request Inspector for controlled GET, HEAD, and POST requests
+- TLS certificate validity and protocol inspection
 - ICMP ping and TCP ping
+- Enhanced ping statistics with packet loss, min/avg/max, jitter, stddev, and probes
 - DNS `nslookup`, reverse PTR lookup, and `dig`-style record queries
+- DNS comparison across system, Cloudflare, Google, and Quad9 resolvers
 - Traceroute with configurable hop and timeout limits
+- MTR-style route quality analysis
 - WHOIS lookup for domains and IP addresses
 - TCP port availability checks
+- Bounded TCP port scans with a 100-port limit
+- IP/CIDR subnet calculator
+- Mail DNS checks for MX, SPF, and DMARC
 - Wake-On-LAN magic packet support
 - Client IP detection with proxy header support
 - Global request rate limiting
@@ -123,18 +135,26 @@ When the application is running, FastAPI serves interactive API documentation at
 | Endpoint | Method | Description |
 | --- | --- | --- |
 | `/api/health` | GET | Health check |
+| `/api/http-check` | GET | Check HTTP status, redirects, timing, and headers |
+| `/api/request-inspect` | GET | Inspect controlled HTTP request and response metadata |
+| `/api/tls/{host}` | GET | Inspect TLS certificate metadata |
 | `/api/ping` | GET | ICMP ping the detected client IP |
 | `/api/ping/{address}` | GET | ICMP ping an address or hostname |
 | `/api/tcping` | GET | TCP ping the detected client IP |
 | `/api/tcping/{address}` | GET | TCP ping an address or hostname |
 | `/api/nslookup/{address}` | GET | Resolve A/AAAA records for a name |
 | `/api/dig/{address}` | GET | Query DNS records |
+| `/api/dns-compare/{name}` | GET | Compare DNS answers across common resolvers |
 | `/api/reverse-ip` | GET | Reverse lookup the detected client IP |
 | `/api/reverse-ip/{address}` | GET | Reverse lookup an IP address |
 | `/api/traceroute/{address}` | GET | Trace the network path to a host |
+| `/api/mtr/{address}` | GET | Run MTR-style route quality analysis |
 | `/api/whois/{query}` | GET | WHOIS lookup for a domain or IP |
 | `/api/myip` | GET | Return the detected client IP |
 | `/api/port/{address}/{port}` | GET | Check whether a TCP port is open |
+| `/api/port-scan/{address}` | GET | Scan up to 100 TCP ports |
+| `/api/subnet` | GET | Calculate subnet details for a CIDR |
+| `/api/mail-dns/{domain}` | GET | Check MX, SPF, and DMARC records |
 | `/api/wol/{mac_addr}` | GET | Send a Wake-On-LAN magic packet |
 
 Legacy unprefixed endpoints are kept for backward compatibility:
@@ -149,8 +169,17 @@ Legacy unprefixed endpoints are kept for backward compatibility:
 ## Example Requests
 
 ```bash
+# HTTP check
+curl "http://localhost:8000/api/http-check?url=https://example.com"
+
+# Request inspector
+curl "http://localhost:8000/api/request-inspect?url=https://example.com&method=HEAD"
+
+# TLS certificate
+curl "http://localhost:8000/api/tls/example.com?port=443"
+
 # Ping
-curl http://localhost:8000/api/ping/8.8.8.8
+curl "http://localhost:8000/api/ping/8.8.8.8?count=5"
 
 # TCP ping
 curl "http://localhost:8000/api/tcping/8.8.8.8?port=53&timeout=3"
@@ -161,11 +190,17 @@ curl http://localhost:8000/api/nslookup/example.com
 # DNS record query
 curl "http://localhost:8000/api/dig/example.com?type=MX"
 
+# DNS resolver comparison
+curl "http://localhost:8000/api/dns-compare/example.com?type=A"
+
 # Reverse DNS lookup
 curl http://localhost:8000/api/reverse-ip/8.8.8.8
 
 # Traceroute
 curl "http://localhost:8000/api/traceroute/8.8.8.8?max_hops=20&timeout=2"
+
+# MTR route quality
+curl "http://localhost:8000/api/mtr/8.8.8.8?cycles=5&max_hops=20&timeout=2"
 
 # WHOIS lookup
 curl "http://localhost:8000/api/whois/example.com?timeout=5"
@@ -176,6 +211,15 @@ curl http://localhost:8000/api/myip
 # TCP port check
 curl "http://localhost:8000/api/port/127.0.0.1/8000?timeout=1"
 
+# Bounded port scan
+curl "http://localhost:8000/api/port-scan/127.0.0.1?ports=22,80,443,8000-8010"
+
+# Subnet calculator
+curl "http://localhost:8000/api/subnet?cidr=192.168.1.0/24"
+
+# Mail DNS health
+curl http://localhost:8000/api/mail-dns/example.com
+
 # Wake-On-LAN
 curl http://localhost:8000/api/wol/AA:BB:CC:DD:EE:FF
 ```
@@ -184,13 +228,33 @@ curl http://localhost:8000/api/wol/AA:BB:CC:DD:EE:FF
 
 | Endpoint | Parameter | Range / Default | Description |
 | --- | --- | --- | --- |
+| `/api/http-check` | `url` | required | URL to check |
+| `/api/http-check` | `timeout` | 1-30, default 5 | Request timeout in seconds |
+| `/api/request-inspect` | `url` | required | URL to inspect |
+| `/api/request-inspect` | `method` | `GET`, `HEAD`, `POST`; default `GET` | HTTP method to send |
+| `/api/request-inspect` | `headers` | JSON object | Optional request headers |
+| `/api/request-inspect` | `body` | up to 16 KB | Optional POST body |
+| `/api/request-inspect` | `timeout` | 1-30, default 5 | Request timeout in seconds |
+| `/api/tls/{host}` | `port` | 1-65535, default 443 | TLS port |
+| `/api/tls/{host}` | `timeout` | 1-30, default 5 | Connection timeout in seconds |
+| `/api/ping/{address}` | `count` | 1-20, default 4 | Number of ICMP probes |
+| `/api/ping/{address}` | `timeout` | 1-30, default 2 | Per-probe timeout in seconds |
+| `/api/ping/{address}` | `interval` | 0.1-2.0, default 0.2 | Delay between probes |
 | `/api/tcping/{address}` | `port` | 1-65535, default 80 | TCP port to connect to |
 | `/api/tcping/{address}` | `timeout` | 1-30, default 2 | Connection timeout in seconds |
 | `/api/dig/{address}` | `type` | default `A` | DNS record type, such as `A`, `AAAA`, `MX`, `TXT`, `CNAME`, or `NS` |
+| `/api/dns-compare/{name}` | `type` | default `A` | DNS record type |
+| `/api/dns-compare/{name}` | `timeout` | 1-30, default 5 | Per-resolver timeout in seconds |
 | `/api/traceroute/{address}` | `max_hops` | 1-64, default 30 | Maximum hop count |
 | `/api/traceroute/{address}` | `timeout` | 1-30, default 2 | Per-hop timeout in seconds |
+| `/api/mtr/{address}` | `cycles` | 1-20, default 5 | Number of trace cycles |
+| `/api/mtr/{address}` | `max_hops` | 1-64, default 30 | Maximum hop count |
+| `/api/mtr/{address}` | `timeout` | 1-30, default 2 | Per-hop timeout in seconds |
 | `/api/whois/{query}` | `timeout` | 1-30, default 5 | WHOIS connection timeout in seconds |
 | `/api/port/{address}/{port}` | `timeout` | 0.1-30.0, default 2.0 | TCP connection timeout in seconds |
+| `/api/port-scan/{address}` | `ports` | required, max 100 ports | Comma-separated ports and ranges |
+| `/api/port-scan/{address}` | `timeout` | 0.1-30.0, default 1.0 | Per-port timeout in seconds |
+| `/api/subnet` | `cidr` | required | IP network in CIDR notation |
 
 ## Configuration
 

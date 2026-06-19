@@ -369,7 +369,8 @@ header h1 {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
     padding: 0.75rem 1rem;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
@@ -379,14 +380,23 @@ header h1 {
     transition: all 0.3s ease;
 }
 
+.form-group textarea {
+    min-height: 96px;
+    resize: vertical;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    line-height: 1.4;
+}
+
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
     outline: none;
     border-color: var(--accent-color);
     box-shadow: 0 0 0 3px var(--accent-light);
 }
 
-.form-group input::placeholder {
+.form-group input::placeholder,
+.form-group textarea::placeholder {
     color: var(--text-muted);
 }
 
@@ -489,6 +499,7 @@ header h1 {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
     padding: 0.5rem 0;
     border-bottom: 1px solid var(--border-color);
 }
@@ -504,6 +515,8 @@ header h1 {
 .result-value {
     font-weight: 600;
     color: var(--text-primary);
+    text-align: right;
+    overflow-wrap: anywhere;
 }
 
 .result-value.success {

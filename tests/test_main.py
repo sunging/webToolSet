@@ -101,6 +101,11 @@ class TestPingEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "delay" in data
+        assert "packet_loss" in data
+        assert "min_rtt" in data
+        assert "max_rtt" in data
+        assert "jitter" in data
+        assert "probes" in data
         assert data["error"] is None
 
     def test_ping_ipv6_localhost(self):
@@ -123,6 +128,100 @@ class TestPingEndpoint:
         assert response.status_code in [400, 404, 500]
         data = response.json()
         assert data.get("error") is not None
+
+    def test_ping_invalid_count(self):
+        """Test ping rejects an out-of-range probe count."""
+        response = client.get("/api/ping/127.0.0.1?count=999")
+        assert response.status_code == 422
+
+
+class TestHttpTools:
+    """Tests for HTTP check and request inspector endpoints."""
+
+    def test_http_check_invalid_url(self):
+        """Test HTTP check rejects unsupported URL schemes."""
+        response = client.get("/api/http-check?url=ftp://example.com")
+        assert response.status_code == 400
+        data = response.json()
+        assert data["error"] is not None
+
+    def test_http_check_local_server(self):
+        """Test HTTP check against the app's own health endpoint."""
+        import threading
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.end_headers()
+                self.wfile.write(b"ok")
+
+            def log_message(self, format, *args):
+                pass
+
+        server = HTTPServer(("127.0.0.1", 0), Handler)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.handle_request, daemon=True)
+        thread.start()
+
+        response = client.get(f"/api/http-check?url=http://127.0.0.1:{port}/health")
+        server.server_close()
+        thread.join(timeout=2)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status_code"] == 200
+        assert data["final_url"] == f"http://127.0.0.1:{port}/health"
+        assert data["elapsed_ms"] is not None
+
+    def test_request_inspector_invalid_method(self):
+        """Test request inspector rejects unsupported methods."""
+        response = client.get("/api/request-inspect?url=https://example.com&method=DELETE")
+        assert response.status_code == 422
+
+    def test_request_inspector_invalid_headers_json(self):
+        """Test request inspector handles malformed headers JSON."""
+        response = client.get("/api/request-inspect?url=https://example.com&headers={bad")
+        assert response.status_code == 400
+        data = response.json()
+        assert data["error"] is not None
+
+
+class TestTlsEndpoint:
+    """Tests for the /api/tls endpoint."""
+
+    def test_tls_invalid_port(self):
+        """Test TLS check rejects invalid ports."""
+        response = client.get("/api/tls/example.com?port=0")
+        assert response.status_code == 422
+
+    def test_tls_invalid_host_structure(self):
+        """Test TLS check returns an error structure for an invalid host."""
+        response = client.get("/api/tls/this.host.does.not.exist.invalid")
+        assert response.status_code in [400, 404]
+        data = response.json()
+        assert data["host"] == "this.host.does.not.exist.invalid"
+        assert data["error"] is not None
+
+
+class TestDnsCompareEndpoint:
+    """Tests for DNS resolver comparison."""
+
+    def test_dns_compare_structure(self):
+        """Test DNS comparison returns per-resolver structures."""
+        response = client.get("/api/dns-compare/dns.google?type=A&timeout=1")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "dns.google"
+        assert data["record_type"] == "A"
+        assert len(data["results"]) >= 1
+        assert "resolver" in data["results"][0]
+
+    def test_dns_compare_invalid_type(self):
+        """Test DNS comparison rejects unsupported record types."""
+        response = client.get("/api/dns-compare/dns.google?type=INVALID")
+        assert response.status_code == 422
 
 
 class TestTcpPingEndpoint:
@@ -244,6 +343,23 @@ class TestTracerouteEndpoint:
         assert response.status_code == 422
 
 
+class TestMtrEndpoint:
+    """Tests for the /api/mtr endpoint."""
+
+    def test_mtr_structure(self):
+        """Test MTR returns the expected response structure or raw-socket error."""
+        response = client.get("/api/mtr/127.0.0.1?cycles=1&max_hops=1&timeout=1")
+        assert response.status_code in [200, 404, 500]
+        data = response.json()
+        assert data["address"] == "127.0.0.1"
+        assert "hops" in data or data["error"] is not None
+
+    def test_mtr_invalid_cycles(self):
+        """Test MTR rejects out-of-range cycle counts."""
+        response = client.get("/api/mtr/127.0.0.1?cycles=999")
+        assert response.status_code == 422
+
+
 class TestWhoisEndpoint:
     """Tests for the /api/whois endpoint."""
 
@@ -355,6 +471,84 @@ class TestPortCheckEndpoint:
         assert "address" in data
         assert "port" in data
         assert "open" in data
+
+
+class TestSubnetEndpoint:
+    """Tests for subnet calculations."""
+
+    def test_subnet_ipv4(self):
+        """Test IPv4 subnet calculation."""
+        response = client.get("/api/subnet?cidr=192.168.1.0/24")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["network"] == "192.168.1.0/24"
+        assert data["first_usable"] == "192.168.1.1"
+        assert data["last_usable"] == "192.168.1.254"
+        assert data["usable_hosts"] == 254
+
+    def test_subnet_invalid(self):
+        """Test invalid CIDR returns a 400 error."""
+        response = client.get("/api/subnet?cidr=not-a-cidr")
+        assert response.status_code == 400
+        data = response.json()
+        assert data["error"] is not None
+
+
+class TestPortScanEndpoint:
+    """Tests for bounded TCP port scans."""
+
+    def test_port_scan_open_and_closed(self):
+        """Test port scan reports an open local port."""
+        import socket
+        import threading
+
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("127.0.0.1", 0))
+        server.listen(1)
+        port = server.getsockname()[1]
+
+        def accept_and_close():
+            try:
+                conn, _ = server.accept()
+                conn.close()
+            except Exception:
+                pass
+
+        t = threading.Thread(target=accept_and_close, daemon=True)
+        t.start()
+
+        response = client.get(f"/api/port-scan/127.0.0.1?ports={port},19998")
+        server.close()
+        t.join(timeout=2)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["address"] == "127.0.0.1"
+        assert len(data["ports"]) == 2
+        assert any(item["port"] == port and item["open"] for item in data["ports"])
+
+    def test_port_scan_limit(self):
+        """Test port scan enforces the 100-port limit."""
+        response = client.get("/api/port-scan/127.0.0.1?ports=1-101")
+        assert response.status_code == 400
+        data = response.json()
+        assert data["error"] is not None
+
+
+class TestMailDnsEndpoint:
+    """Tests for mail DNS health checks."""
+
+    def test_mail_dns_structure(self):
+        """Test mail DNS returns a stable response structure."""
+        response = client.get("/api/mail-dns/example.com")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["domain"] == "example.com"
+        assert "mx_records" in data
+        assert "spf_records" in data
+        assert "dmarc_records" in data
+        assert "missing" in data
 
 
 class TestLegacyEndpoints:

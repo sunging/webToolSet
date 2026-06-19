@@ -3,26 +3,43 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Path, Query, Request, Response, status
+from fastapi.concurrency import run_in_threadpool
 
 from app.models.responses import (
+    DnsCompareResponse,
     DigResponse,
     ErrorResponse,
+    HttpCheckResponse,
+    MailDnsResponse,
+    MtrResponse,
     MyIpResponse,
     NslookupResponse,
     PingResponse,
     PortCheckResponse,
+    PortScanResponse,
+    RequestInspectorResponse,
     ReverseIpResponse,
+    SubnetResponse,
     TcpPingResponse,
+    TlsCheckResponse,
     TracerouteResponse,
     WakeOnLanResponse,
     WhoisResponse,
 )
 from app.services.network import (
+    DnsCompareService,
     DnsService,
+    HttpCheckService,
+    MailDnsService,
+    MtrService,
     PingService,
     PortCheckService,
+    PortScanService,
+    RequestInspectorService,
     ReverseIpService,
+    SubnetService,
     TcpPingService,
+    TlsCheckService,
     TracerouteService,
     WakeOnLanService,
     WhoisService,
@@ -54,6 +71,15 @@ async def ping(
     request: Request,
     response: Response,
     address: str | None = None,
+    count: Annotated[
+        int, Query(ge=1, le=20, description="Number of ICMP probes")
+    ] = 4,
+    timeout: Annotated[
+        int, Query(ge=1, le=30, description="Per-probe timeout in seconds")
+    ] = 2,
+    interval: Annotated[
+        float, Query(ge=0.1, le=2.0, description="Interval between probes")
+    ] = 0.2,
 ) -> PingResponse:
     """
     Ping a host and return the average delay.
@@ -70,7 +96,9 @@ async def ping(
     if not address:
         address = get_real_ip(request) or "127.0.0.1"
 
-    delay, error = PingService.ping(address)
+    result, error = PingService.ping(
+        address, count=count, timeout=timeout, interval=interval
+    )
 
     if error:
         if "Name lookup" in error:
@@ -79,9 +107,128 @@ async def ping(
             response.status_code = status.HTTP_400_BAD_REQUEST
         else:
             response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        return PingResponse(error=error)
+        if result:
+            return PingResponse(**result, error=error)
+        return PingResponse(address=address, error=error)
 
-    return PingResponse(delay=delay)
+    return PingResponse(**result)
+
+
+@router.get(
+    "/http-check",
+    response_model=HttpCheckResponse,
+    responses={400: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+)
+async def http_check(
+    response: Response,
+    url: Annotated[str, Query(min_length=1, description="URL to check")],
+    timeout: Annotated[
+        int, Query(ge=1, le=30, description="Request timeout in seconds")
+    ] = 5,
+) -> HttpCheckResponse:
+    """Check HTTP status, redirects, timing and headers for a URL."""
+    result, error = HttpCheckService.check(url, timeout=timeout)
+
+    if error:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return HttpCheckResponse(url=url, error=error)
+
+    return HttpCheckResponse(**result)
+
+
+@router.get(
+    "/request-inspect",
+    response_model=RequestInspectorResponse,
+    responses={400: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+)
+async def request_inspect(
+    response: Response,
+    url: Annotated[str, Query(min_length=1, description="URL to inspect")],
+    method: Annotated[
+        str,
+        Query(
+            pattern=r"^(?i:GET|HEAD|POST)$",
+            description="HTTP method to send",
+        ),
+    ] = "GET",
+    headers: Annotated[
+        str | None,
+        Query(description="Optional JSON object of request headers"),
+    ] = None,
+    body: Annotated[
+        str | None,
+        Query(max_length=16384, description="Optional POST request body"),
+    ] = None,
+    timeout: Annotated[
+        int, Query(ge=1, le=30, description="Request timeout in seconds")
+    ] = 5,
+) -> RequestInspectorResponse:
+    """Inspect a controlled HTTP request and response."""
+    result, error = RequestInspectorService.inspect(
+        url, method=method, headers=headers, body=body, timeout=timeout
+    )
+
+    if error:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return RequestInspectorResponse(error=error)
+
+    return RequestInspectorResponse(**result)
+
+
+@router.get(
+    "/tls/{host}",
+    response_model=TlsCheckResponse,
+    responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+)
+async def tls_check(
+    response: Response,
+    host: str,
+    port: Annotated[int, Query(ge=1, le=65535, description="TLS port")] = 443,
+    timeout: Annotated[
+        int, Query(ge=1, le=30, description="Connection timeout in seconds")
+    ] = 5,
+) -> TlsCheckResponse:
+    """Inspect TLS certificate metadata for a host."""
+    result, error = TlsCheckService.check(host, port=port, timeout=timeout)
+
+    if error:
+        if "Name resolution" in error:
+            response.status_code = status.HTTP_404_NOT_FOUND
+        else:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+        return TlsCheckResponse(host=host, port=port, error=error)
+
+    return TlsCheckResponse(**result)
+
+
+@router.get(
+    "/dns-compare/{name}",
+    response_model=DnsCompareResponse,
+    responses={400: {"model": ErrorResponse}},
+)
+async def dns_compare(
+    response: Response,
+    name: str,
+    type: Annotated[
+        str,
+        Query(
+            pattern=r"^(?i:A|AAAA|CNAME|MX|NS|TXT|SOA|PTR|SRV|CAA)$",
+            description="DNS record type to query",
+        ),
+    ] = "A",
+    timeout: Annotated[
+        int, Query(ge=1, le=30, description="Per-resolver timeout in seconds")
+    ] = 5,
+) -> DnsCompareResponse:
+    """Compare DNS answers across common recursive resolvers."""
+    record_type = type.upper()
+    result, error = DnsCompareService.compare(name, record_type=record_type, timeout=timeout)
+
+    if error:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return DnsCompareResponse(name=name, record_type=record_type, error=error)
+
+    return DnsCompareResponse(**result)
 
 
 @router.get(
@@ -311,6 +458,39 @@ async def traceroute(
 
 
 @router.get(
+    "/mtr/{address}",
+    response_model=MtrResponse,
+    responses={404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+)
+async def mtr(
+    response: Response,
+    address: str,
+    cycles: Annotated[
+        int, Query(ge=1, le=20, description="Number of traceroute cycles")
+    ] = 5,
+    max_hops: Annotated[
+        int, Query(ge=1, le=64, description="Maximum number of hops")
+    ] = 30,
+    timeout: Annotated[
+        int, Query(ge=1, le=30, description="Per-hop timeout in seconds")
+    ] = 2,
+) -> MtrResponse:
+    """Run MTR-style route quality analysis."""
+    result, error = await run_in_threadpool(
+        MtrService.analyze, address, cycles=cycles, max_hops=max_hops, timeout=timeout
+    )
+
+    if error:
+        if "Name lookup" in error:
+            response.status_code = status.HTTP_404_NOT_FOUND
+        else:
+            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return MtrResponse(address=address, error=error)
+
+    return MtrResponse(**result)
+
+
+@router.get(
     "/whois/{query}",
     response_model=WhoisResponse,
     responses={404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
@@ -409,6 +589,71 @@ async def port_check(
         latency=latency,
         error=error,
     )
+
+
+@router.get(
+    "/subnet",
+    response_model=SubnetResponse,
+    responses={400: {"model": ErrorResponse}},
+)
+async def subnet_calculate(
+    response: Response,
+    cidr: Annotated[str, Query(min_length=1, description="IP network in CIDR notation")],
+) -> SubnetResponse:
+    """Calculate subnet details for an IP/CIDR value."""
+    result, error = SubnetService.calculate(cidr)
+
+    if error:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return SubnetResponse(input=cidr, error=error)
+
+    return SubnetResponse(**result)
+
+
+@router.get(
+    "/port-scan/{address}",
+    response_model=PortScanResponse,
+    responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+)
+async def port_scan(
+    response: Response,
+    address: str,
+    ports: Annotated[
+        str,
+        Query(
+            min_length=1,
+            description="Comma-separated ports and ranges, up to 100 ports",
+        ),
+    ],
+    timeout: Annotated[
+        float, Query(ge=0.1, le=30.0, description="Per-port timeout in seconds")
+    ] = 1.0,
+) -> PortScanResponse:
+    """Scan a bounded list of TCP ports on a host."""
+    result, error = await run_in_threadpool(
+        PortScanService.scan, address, ports, timeout=timeout
+    )
+
+    if error:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return PortScanResponse(address=address, error=error)
+
+    return PortScanResponse(**result)
+
+
+@router.get(
+    "/mail-dns/{domain}",
+    response_model=MailDnsResponse,
+    responses={400: {"model": ErrorResponse}},
+)
+async def mail_dns(domain: str) -> MailDnsResponse:
+    """Check MX, SPF and DMARC records for a domain."""
+    result, error = MailDnsService.check(domain)
+
+    if error:
+        return MailDnsResponse(domain=domain, error=error)
+
+    return MailDnsResponse(**result)
 
 
 @router.get(
